@@ -19,5 +19,5 @@ This is an open-source project led by the [Emory NLP](http://nlp.cs.emory.edu/) 
 
 ## Resources
 
-* [Getting Started]()
+* [Getting Started](docs/getting_started.md)
 * [Data Format](docs/data_format.md)
