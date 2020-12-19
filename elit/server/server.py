@@ -25,7 +25,7 @@ class HandlingError(Exception):
 
 
 class ModelRunner(object):
-    def __init__(self, service:Service, max_queue_size=128, max_batch_size=32, max_wait=0.05):
+    def __init__(self, service: Service, max_queue_size=128, max_batch_size=32, max_wait=0.05):
         """
 
         Args:
@@ -133,8 +133,8 @@ async def parse(text: str):
     return output.to_dict()
 
 
-def run(host='0.0.0.0', port=8000, reload=False):
-    uvicorn.run('elit.server.server:app', host=host, port=port, reload=reload)
+def run(host='0.0.0.0', port=8000, reload=False, workers=1):
+    uvicorn.run('elit.server.server:app', host=host, port=port, reload=reload, workers=workers)
 
 
 def main():

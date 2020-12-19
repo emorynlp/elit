@@ -19,6 +19,7 @@ def main():
     server_parser = task_parser.add_parser(name='serve', help='start http server',
                                            description='A http server for ELIT')
     server_parser.add_argument('--port', type=int, default=8000)
+    server_parser.add_argument('--workers', type=int, default=1, help='number of workers')
 
     args = arg_parser.parse_args()
 
@@ -30,7 +31,7 @@ def main():
             print(doc)
     elif args.task == 'serve':
         from elit.server import server
-        server.run(port=args.port)
+        server.run(port=args.port, workers=args.workers)
 
 
 if __name__ == '__main__':
