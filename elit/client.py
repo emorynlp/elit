@@ -1,9 +1,5 @@
-# -*- coding:utf-8 -*-
-# Author: hankcs
-# Date: 2020-12-18 20:00
 import json
-from typing import Any, Dict
-
+from typing import Any, Dict, List, Union
 from elit.common.document import Document
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
@@ -16,12 +12,25 @@ class Client(object):
         self.url = url
         self.auth = auth
 
-    def parse(self, text: str) -> Document:
-        response = self._send_get_json(self.url + '/parse', {'text': text})
+    def parse(self,
+              text: Union[str, List[str]] = None,
+              tokens: List[List[str]] = None,
+              models=("lem", "pos", "ner", "con", "dep", "srl", "amr"),
+              language='en',
+              verbose=True,
+              ) -> Document:
+        assert text or tokens, 'At least one of text or tokens has to be specified.'
+        response = self._send_post_json(self.url + '/parse', {
+            'text': text,
+            'tokens': tokens,
+            'models': models,
+            'language': language,
+            'verbose': verbose
+        })
         return Document(response)
 
     def _send_post(self, url, form: Dict[str, Any]):
-        request = Request(url, urlencode(form).encode())
+        request = Request(url, json.dumps(form).encode())
         return urlopen(request).read().decode()
 
     def _send_post_json(self, url, form: Dict[str, Any]):
@@ -36,10 +45,33 @@ class Client(object):
 
 
 def main():
-    text = "Jobs and Wozniak co-founded Apple in 1976 to sell Wozniak's Apple I personal computer. " \
-           "Together the duo gained fame and wealth a year later with the Apple II. "
+    # _test_raw_text()
+    # _test_sents()
+    _test_tokens()
+
+
+def _test_raw_text():
+    text = "Emory NLP is a research lab in Atlanta, GA. " \
+           "It is founded by Jinho D. Choi in 2014. Dr. Choi is a professor at Emory University."
     nlp = Client('http://0.0.0.0:8000')
     print(nlp.parse(text))
+
+
+def _test_sents():
+    text = ["Emory NLP is a research lab in Atlanta, GA. ",
+            "It is founded by Jinho D. Choi in 2014. Dr. Choi is a professor at Emory University."]
+    nlp = Client('http://0.0.0.0:8000')
+    print(nlp.parse(text))
+
+
+def _test_tokens():
+    tokens = [
+        ["Emory", "NLP", "is", "a", "research", "lab", "in", "Atlanta", ",", "GA", "."],
+        ["It", "is", "founded", "by", "Jinho", "D.", "Choi", "in", "2014", ".", "Dr.", "Choi", "is", "a", "professor",
+         "at", "Emory", "University", "."]
+    ]
+    nlp = Client('http://0.0.0.0:8000')
+    print(nlp.parse(tokens=tokens, models=['ner', 'srl', 'dep'], verbose=True))
 
 
 if __name__ == '__main__':
