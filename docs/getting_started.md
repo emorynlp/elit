@@ -3,7 +3,7 @@
 ## Install
 
 ```
-conda install pytorch cudatoolkit=10.2 -c pytorch # Optional GPU support 
+conda install pytorch cudatoolkit=10.2 -c pytorch      # [Optional] GPU support, adjust the cuda version 
 pip install elit
 ```
 
