@@ -4,7 +4,9 @@
 
 ```
 conda install pytorch cudatoolkit=10.2 -c pytorch      # [Optional] GPU support, adjust the cuda version 
-pip install elit
+git clone https://github.com/emorynlp/elit.git
+cd elit
+pip install -e .
 ```
 
 ## CLI
