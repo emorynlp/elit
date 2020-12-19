@@ -20,4 +20,4 @@ This is an open-source project led by the [Emory NLP](http://nlp.cs.emory.edu/) 
 ## Resources
 
 * [Getting Started]()
-* [Date Format]()
+* [Data Format](docs/data_format.md)
