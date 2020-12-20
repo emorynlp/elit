@@ -85,9 +85,6 @@ def load_from_meta_file(save_dir: str, meta_filename='meta.json', transform_only
         eprint(f'{"ERROR LOG BEGINS":=^80}')
         traceback.print_exc()
         eprint(f'{"ERROR LOG ENDS":=^80}')
-        if isinstance(e, ModuleNotFoundError):
-            eprint('Some modules required by this model are missing. Please install the full version:\n'
-                   'pip install elit[full]')
         from pkg_resources import parse_version
         model_version = meta.get("elit_version", "unknown")
         if model_version == '2.0.0':  # Quick fix: the first version used a wrong string

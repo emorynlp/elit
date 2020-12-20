@@ -4,9 +4,8 @@
 from typing import List
 
 import elit
-from elit.common.document import Document
 from elit.components.tokenizer import EnglishTokenizer
-from elit.pretrained.mtl import LEM_POS_NER_DEP_SDP_CON_AMR_ELECTRA_BASE_EN
+from elit.pretrained.mtl import LEM_POS_NER_DEP_SDP_CON_AMR_ROBERTA_BASE_EN
 from elit.server.format import Input
 from elit.server.service import Service
 
@@ -26,7 +25,7 @@ def tokenize(sents: List[str]) -> List[List[str]]:
     return [tokenizer.tokenize(x) for x in sents]
 
 
-model = elit.load(LEM_POS_NER_DEP_SDP_CON_AMR_ELECTRA_BASE_EN)
+model = elit.load(LEM_POS_NER_DEP_SDP_CON_AMR_ROBERTA_BASE_EN)
 en = Service(
     model,
     eos,
