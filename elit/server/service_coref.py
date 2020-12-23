@@ -36,7 +36,7 @@ class ServiceCoreference:
 
     def _translate_context(self, context: OnlineCorefContext) -> CorefOutput:
         return CorefOutput(
-            input_ids=context.inputs_ids,
+            input_ids=context.input_ids,
             sentence_map=context.sentence_map,
             subtoken_map=context.subtoken_map,
             mentions=context.mentions,
@@ -66,19 +66,19 @@ class ServiceCoreference:
                 self.identifier: coref_output
             })
 
-    def _predict_single(self, coref_input: Optional[CorefInput]) -> Optional[CorefOutput]:
+    def _predict_single(self, coref_input: Optional[CorefInput], **kwargs) -> Optional[CorefOutput]:
         if coref_input is None:
             return None
-        return self.model(coref_input)
+        return self.model(coref_input, **kwargs)
 
-    def predict(self, inputs: Union[Input, List[Input]]) -> Union[Document, List[Document]]:
+    def predict(self, inputs: Union[Input, List[Input]], **kwargs) -> Union[Document, List[Document]]:
         """ Sequential prediction on multiple input docs. """
         self.service_tokenizer.tokenize_inputs(inputs)  # no effects (read-only) in server pipeline
 
         if isinstance(inputs, Input):
-            return self._translate_from_coref(self._predict_single(self._translate_to_coref(inputs)), inputs)
+            return self._translate_from_coref(self._predict_single(self._translate_to_coref(inputs), **kwargs), inputs)
 
         coref_inputs = [self._translate_to_coref(input_doc) for input_doc in inputs]
-        output_docs = [self._translate_from_coref(self._predict_single(coref_input), inputs[i])
+        output_docs = [self._translate_from_coref(self._predict_single(coref_input, **kwargs), inputs[i])
                        for i, coref_input in enumerate(coref_inputs)]
         return output_docs
