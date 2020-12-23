@@ -6,54 +6,23 @@ from typing import List, Callable
 
 from elit.common.document import Document
 from elit.server.format import Input
+from elit.server.service_tokenizer import ServiceTokenizer
 
 
-class Service(object):
+class ServiceParser(object):
 
     def __init__(self,
                  model: Callable[[List[List[str]], List[str]], Document],
-                 eos: Callable[[List[str]], List[List[str]]] = None,
-                 tokenizer: Callable[[List[str]], List[List[str]]] = None) -> None:
+                 service_tokenizer: ServiceTokenizer) -> None:
         super().__init__()
         self.model = model
-        self.eos = eos
-        self.tokenizer = tokenizer
-
-    def split_sents(self, text: List[str]) -> List[List[str]]:
-        assert self.eos, 'eos is required to perform sentence split'
-        return self.eos(text)
-
-    def tokenize(self, docs: List[List[str]]) -> List[List[List[str]]]:
-        assert self.tokenizer, 'tokenizer is required to perform tokenization'
-        results = []
-        tokens = self.tokenizer(sum(docs, []))
-        for doc in docs:
-            results.append([])
-            results[-1].extend(tokens[:len(doc)])
-            del tokens[:len(doc)]
-        return results
+        self.service_tokenizer = service_tokenizer
 
     def parse_sents(self, sents: List[List[str]], tasks: List[str] = None) -> Document:
         return self.model(sents, tasks=tasks)
 
     def parse(self, inputs: List[Input]) -> List[Document]:
-        needs_split = []
-        input_ids = []
-        for i, input in enumerate(inputs):
-            if isinstance(input.text, str):
-                needs_split.append(input.text)
-                input_ids.append(i)
-        for i, sents in zip(input_ids, self.split_sents(needs_split)):
-            inputs[i].text = sents
-
-        needs_tokenize = []
-        input_ids = []
-        for i, input in enumerate(inputs):
-            if not input.tokens:
-                needs_tokenize.append(input.text)
-                input_ids.append(i)
-        for i, tokens in zip(input_ids, self.tokenize(needs_tokenize)):
-            inputs[i].tokens = tokens
+        self.service_tokenizer.tokenize_inputs(inputs)
 
         # We shall group by models
         inputs_by_tasks = defaultdict(list)
