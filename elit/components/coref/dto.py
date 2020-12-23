@@ -56,11 +56,6 @@ class CorefOutput:
         self.linking_prob = linking_prob
         self.error_msg = error_msg
 
-    def prepare_as_next_online_context(self):
-        self.clusters = None
-        self.linking_prob = None
-        return self
-
     def __len__(self):
         return 0 if self.input_ids is None else len(self.input_ids)
 
