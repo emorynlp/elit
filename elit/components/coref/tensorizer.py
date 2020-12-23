@@ -85,7 +85,7 @@ class Tensorizer:
         self.max_segment_len = config['max_segment_len']
         self.add_speaker_token = config['add_speaker_token']
         self.use_speaker_indicator = config['use_speaker_indicator']
-        self.add_sep_token = config['add_sep_token']
+        self.add_sep_token = config.get('add_sep_token', False)
         self.max_speakers = config['max_num_speakers']
         self.genres = config['genres']
         self.genre_dict = {genre: idx for idx, genre in enumerate(self.genres)}
@@ -98,25 +98,93 @@ class Tensorizer:
     def get_speaker_token(self, speaker_id):
         return f'[SPK{speaker_id}]'
 
-    def encode_doc(self, inputs: CorefInput) -> CorefInstance:
+    def get_default_genre(self):
+        return 'en' if 'en' in self.genres else self.genres[0]
+
+    def validate_input(self, coref_input: CorefInput) -> bool:
+        pass
+
+    def encode_doc(self, coref_input: CorefInput) -> CorefInstance:
         """
         Process input for document coreference resolution.
 
+        If add speaker token, add one speaker token per sentence.
+        Args:
+            coref_input ():
+
         Returns:
 
         """
-        raise NotImplementedError()
+        tokenizer = self.tokenizer
 
-    def encode_online(self, inputs: CorefInput) -> CorefInstance:
+        def create_inst(input_ids, sentence_map, subtoken_map, speaker_ids, genre):
+            """ Input: without considering CLS, SEP """
+            inst = CorefInstance(
+                input_ids=torch.tensor([tokenizer.cls_token_id] + input_ids + [tokenizer.sep_token_id],
+                                       dtype=torch.long),
+                input_mask=torch.tensor([1] * (len(input_ids) + 2), dtype=torch.long),
+                sentence_map=torch.tensor([sentence_map[0]] + sentence_map + [sentence_map[-1] + 1], dtype=torch.long),
+                subtoken_map=([subtoken_map[0]] + subtoken_map + [subtoken_map[-1]]),
+                speaker_ids=torch.tensor(([speaker_ids[0]] + speaker_ids + [speaker_ids[-1]]) if speaker_ids else [],
+                                         dtype=torch.long),
+                uttr_start_idx=[1], genre_id=torch.tensor(self.genre_dict[genre], dtype=torch.long), mentions=[]
+            )
+            return inst
+
+        doc_or_uttr, sent_speaker_ids, genre = coref_input.doc_or_uttr, coref_input.speaker_ids, coref_input.genre
+        # Assign speaker id if needed
+        if not sent_speaker_ids:
+            sent_speaker_ids = [1] * len(doc_or_uttr)
+        if isinstance(sent_speaker_ids, int):
+            sent_speaker_ids = [sent_speaker_ids] * len(doc_or_uttr)
+        # Assign default genre if needed
+        if genre is None or genre not in self.genres:
+            genre = self.get_default_genre()
+        # Assign global sentence and token idx offset
+        sentence_idx, token_idx = 0, 0
+
+        # Process current doc or utterance
+        subtokens, sentence_map, subtoken_map, speaker_ids = [], [], [], []
+        for sent, speaker_id in zip(doc_or_uttr, sent_speaker_ids):
+            if self.add_speaker_token:
+                subtokens.append(self.get_speaker_token(speaker_id))
+                sentence_map.append(sentence_idx)
+                subtoken_map.append(token_idx)
+                speaker_ids.append(speaker_id)
+            for token in sent:
+                subtoks = tokenizer.tokenize(token)
+                subtokens += subtoks
+                sentence_map += [sentence_idx] * len(subtoks)
+                subtoken_map += [token_idx] * len(subtoks)
+                speaker_ids += [speaker_id] * len(subtoks)
+                token_idx += 1
+            sentence_idx += 1
+        # Truncate
+        if len(subtokens) + 2 > self.max_segment_len:
+            subtokens = subtokens[:self.max_segment_len - 2]
+            sentence_map = sentence_map[:self.max_segment_len - 2]
+            subtoken_map = subtoken_map[:self.max_segment_len - 2]
+
+        inst = create_inst(
+            input_ids=tokenizer.convert_tokens_to_ids(subtokens),
+            sentence_map=sentence_map, subtoken_map=subtoken_map,
+            speaker_ids=speaker_ids if self.use_speaker_indicator else [], genre=genre
+        )
+        return inst
+
+    def encode_online(self, coref_input: CorefInput) -> CorefInstance:
         """
         Process input for online coreference resolution.
 
+        If add speaker token, add one speaker token per utterance.
         Args:
-            inputs ():
+            coref_input ():
 
         Returns:
 
         """
+        tokenizer = self.tokenizer
+
         def create_inst(input_ids, sentence_map, subtoken_map, speaker_ids, uttr_start_idx, genre, mentions):
             """ Input: without considering CLS, SEP """
             inst = CorefInstance(
@@ -133,23 +201,23 @@ class Tensorizer:
             )
             return inst
 
-        tokenizer = self.tokenizer
-        utterance, speaker_id, genre, context = inputs.doc_or_uttr, inputs.speaker_ids, inputs.genre, inputs.context
-        # Assign speaker id if needed; only one speaker per utterance
+        doc_or_uttr, speaker_id, genre, context = coref_input.doc_or_uttr, coref_input.speaker_ids, \
+                                                  coref_input.genre, coref_input.context
+        # Assign speaker id if needed; assuming same speaker for all sentences in current utterance
         if isinstance(speaker_id, list):
             speaker_id = speaker_id[0] if len(speaker_id) > 0 else 1
         if not speaker_id:
             speaker_id = 1
-        # Assign default genre is needed
+        # Assign default genre if needed
         if genre is None or genre not in self.genres:
-            genre = 'en' if 'en' in self.genres else self.genres[0]
+            genre = self.get_default_genre()
         # Assign global sentence and token idx offset
         sentence_idx, token_idx = 0, 0
         if context is not None:
             sentence_idx = context.sentence_map[-1]
             token_idx = context.subtoken_map[-1] + 1
 
-        # Process current utterance
+        # Process current doc or utterance
         subtokens, sentence_map, subtoken_map = [], [], []
         if self.add_sep_token:
             subtokens.append(tokenizer.sep_token)
@@ -159,7 +227,7 @@ class Tensorizer:
             subtokens.append(self.get_speaker_token(speaker_id))
             sentence_map.append(sentence_idx)
             subtoken_map.append(token_idx)
-        for sent in utterance:
+        for sent in doc_or_uttr:
             for token in sent:
                 subtoks = tokenizer.tokenize(token)
                 subtokens += subtoks
@@ -178,7 +246,7 @@ class Tensorizer:
                 input_ids=tokenizer.convert_tokens_to_ids(subtokens),
                 sentence_map=sentence_map, subtoken_map=subtoken_map,
                 speaker_ids=[speaker_id] * len(subtokens) if self.use_speaker_indicator else [],
-                uttr_start_idx=[2 if self.add_sep_token else 1],
+                uttr_start_idx=[1 if self.add_sep_token else 0],
                 genre=genre, mentions=[]
             )
             return inst
@@ -187,22 +255,19 @@ class Tensorizer:
         prev_sep_idx = len(context) - 1  # The middle SEP
         if self.add_sep_token:
             prev_sep_idx = context.uttr_start_idx[-1] - 1
-        context_start_idx = len(context)
+        context_start_idx = len(context) - 1
         for idx in context.uttr_start_idx:
             if len(context) - idx + len(subtokens) + (0 if self.add_sep_token else 1) <= self.max_segment_len:
                 context_start_idx = idx
                 break
 
-        if not self.add_sep_token or context_start_idx > prev_sep_idx:
+        if not self.add_sep_token or context_start_idx >= prev_sep_idx:
             # Cases: no SEP with any context utterances; or use SEP with at most one context utterance
             # No need to adjust context token offset
             uttr_start_idx = [idx - context_start_idx for idx in context.uttr_start_idx if idx - context_start_idx >= 0]
-            if len(uttr_start_idx) == 0:
-                uttr_start_idx = [1 if self.add_sep_token else 0]
-            else:
-                if self.add_sep_token:
-                    assert uttr_start_idx == [0]
-                uttr_start_idx = [0, (len(context) - context_start_idx - (0 if self.add_sep_token else 1))]
+            if self.add_sep_token:
+                assert uttr_start_idx == [] or uttr_start_idx == [0]
+            uttr_start_idx.append(len(context) - context_start_idx - (0 if self.add_sep_token else 1))
 
             mentions = []
             for m in context.mentions:
