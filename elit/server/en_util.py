@@ -16,26 +16,21 @@
 
 # -*- coding:utf-8 -*-
 # Author: hankcs, Liyan Xu
-from typing import Union, List, Tuple
-from pydantic import BaseModel
+from typing import List
+
+from elit.components.tokenizer import EnglishTokenizer
+
+tokenizer = EnglishTokenizer()
 
 
-class OnlineCorefInput(BaseModel):
-    # Required
-    inputs_ids: List[int]
-    sentence_map: List[int]
-    subtoken_map: List[int]
-    # Optional
-    speaker_ids: List[int] = None
-    genre: str = None
-    uttr_start_idx: List[int] = None
-    mentions: List[Tuple[int]] = None
+def eos(text: List[str]) -> List[List[str]]:
+    results = []
+    for doc in text:
+        tokens = tokenizer.tokenize(doc)
+        sents = tokenizer.segment(tokens)
+        results.append(['\t'.join(x) for x in sents])
+    return results
 
 
-class Input(BaseModel):
-    text: Union[str, List[str]] = None
-    tokens: List[List[str]] = None
-    context_coref: OnlineCorefInput = None
-    models: List[str] = ["lem", "pos", "ner", "con", "dep", "srl", "amr", "dcr", "ocr"]
-    language: str = 'en'
-    verbose: bool = True
+def tokenize(sents: List[str]) -> List[List[str]]:
+    return [tokenizer.tokenize(x) for x in sents]
