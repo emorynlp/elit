@@ -1,35 +1,54 @@
+# ========================================================================
+# Copyright 2020 Emory University
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========================================================================
+
 # -*- coding:utf-8 -*-
-# Author: hankcs
-# Date: 2020-12-13 20:21
-from typing import List
-
+# Author: hankcs, Liyan Xu
 import elit
-from elit.components.tokenizer import EnglishTokenizer
 from elit.pretrained.mtl import LEM_POS_NER_DEP_SDP_CON_AMR_ROBERTA_BASE_EN
+from elit.pretrained.coref import DOC_COREF_SPANBERT_LARGE_EN, ONLINE_COREF_SPANBERT_LARGE_EN
 from elit.server.format import Input
-from elit.server.service import Service
-
-tokenizer = EnglishTokenizer()
-
-
-def eos(text: List[str]) -> List[List[str]]:
-    results = []
-    for doc in text:
-        tokens = tokenizer.tokenize(doc)
-        sents = tokenizer.segment(tokens)
-        results.append(['\t'.join(x) for x in sents])
-    return results
+from elit.server.service_tokenizer import ServiceTokenizer
+from elit.server.service_parser import ServiceParser
+from elit.server.service_coref import ServiceCoreference
+from elit.server.en_util import eos, tokenize
+from elit.server.server import RunningServices
 
 
-def tokenize(sents: List[str]) -> List[List[str]]:
-    return [tokenizer.tokenize(x) for x in sents]
+service_tokenizer = ServiceTokenizer(eos, tokenize)
 
+service_parser = ServiceParser(
+    model=elit.load(LEM_POS_NER_DEP_SDP_CON_AMR_ROBERTA_BASE_EN),
+    service_tokenizer=service_tokenizer
+)
 
-model = elit.load(LEM_POS_NER_DEP_SDP_CON_AMR_ROBERTA_BASE_EN)
-en = Service(
-    model,
-    eos,
-    tokenize
+service_doc_coref = ServiceCoreference(
+    model=elit.load(DOC_COREF_SPANBERT_LARGE_EN),
+    service_tokenizer=service_tokenizer
+)
+
+service_online_coref = ServiceCoreference(
+    model=elit.load(ONLINE_COREF_SPANBERT_LARGE_EN),
+    service_tokenizer=service_tokenizer
+)
+
+en_services = RunningServices(
+    tokenizer=service_tokenizer,
+    parser=service_parser,
+    doc_coref=service_doc_coref,
+    online_coref=service_online_coref
 )
 
 
@@ -40,7 +59,7 @@ def main():
     ]
     input = Input(text=text)
     input.models = ['lem']
-    docs = en.parse([input])
+    docs = en_services.parser.parse([input])
     for doc in docs:
         print(doc)
 
