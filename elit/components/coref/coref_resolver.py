@@ -26,12 +26,13 @@ from elit.utils.torch_util import cuda_devices
 from elit.common.torch_component import TorchComponent
 from elit.components.coref.coref_model import MlCorefModel
 from elit.components.coref.tensorizer import Tensorizer, CorefInstance
-from elit.components.coref.io import CorefInput, CorefOutput
+from elit.components.coref.dto import CorefInput, CorefOutput
 
 
 class CoreferenceResolver(TorchComponent):
     """ Coreference resolution component.
 
+    This component handles either document coreference or online coreference, based on configuration.
     Currently only inference is supported; training-related is not available.
     Supported operations: build_model(), to(), load(), predict(), available_genres()
     """
@@ -73,10 +74,11 @@ class CoreferenceResolver(TorchComponent):
     def available_genres(self):
         return self.config['genres'][:]
 
-    def predict(self, data: CorefInput, batch_size: int = None, **kwargs) -> CorefOutput:
+    def predict(self, data: CorefInput, **kwargs) -> CorefOutput:
         """
         Prediction for coreference resolution.
 
+        Resolve either document coreference or online coreference based on configuration.
         Args:
             data ():
             batch_size ():

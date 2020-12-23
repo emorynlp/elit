@@ -79,7 +79,7 @@ class CorefInput:
             doc_or_uttr (): one entire document or one utterance; already tokenized
             speaker_ids (): speaker id for the utterance or document, or list of ids for each sentence; id starts from 1
             genre (): see :meth:`elit.components.coref.coref_resolver.CoreferenceResolver.available_genres`
-            context (): see :meth:`elit.components.coref.io.CorefOutput.prepare_as_next_online_context`
+            context (): see :meth:`elit.components.coref.dto.CorefOutput.prepare_as_next_online_context`
             return_prob (): whether return the mention linking probability
             language ():
             verbose ():
