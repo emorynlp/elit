@@ -101,9 +101,6 @@ class Tensorizer:
     def get_default_genre(self):
         return 'en' if 'en' in self.genres else self.genres[0]
 
-    def validate_input(self, coref_input: CorefInput) -> bool:
-        pass
-
     def encode_doc(self, coref_input: CorefInput) -> CorefInstance:
         """
         Process input for document coreference resolution.
