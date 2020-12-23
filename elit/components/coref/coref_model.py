@@ -152,7 +152,7 @@ class MlCorefModel(nn.Module):
             context_mention_ends = torch.tensor([], dtype=torch.long, device=device)
 
         # Get token emb
-        mention_doc, _ = self.bert(input_ids, attention_mask=input_mask)
+        mention_doc, _ = self.bert(input_ids, attention_mask=input_mask, return_dict=False)
         input_mask = input_mask.to(torch.bool)
         mention_doc = mention_doc[input_mask]
         if speaker_ids.shape[0] > 0:
@@ -160,7 +160,9 @@ class MlCorefModel(nn.Module):
         num_words = mention_doc.shape[0]
         if uttr_start_idx is None:
             uttr_start_idx = 1
-        num_uttr_words = num_words - uttr_start_idx.item()
+        elif isinstance(uttr_start_idx, torch.Tensor):
+            uttr_start_idx = uttr_start_idx.item()
+        num_uttr_words = num_words - uttr_start_idx
         if num_uttr_words < 1:
             logger.error(f'No current utterance in the input')
 

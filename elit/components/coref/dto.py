@@ -64,6 +64,12 @@ class CorefOutput:
     def __len__(self):
         return 0 if self.input_ids is None else len(self.input_ids)
 
+    def __str__(self):
+        return str(vars(self))
+
+    def __repr__(self):
+        return str(self)
+
 
 class CorefInput:
     def __init__(self,
@@ -94,3 +100,9 @@ class CorefInput:
         self.return_prob = return_prob
         self.language = language
         self.verbose = verbose
+
+    def __str__(self):
+        return str(vars(self))
+
+    def __repr__(self):
+        return str(self)

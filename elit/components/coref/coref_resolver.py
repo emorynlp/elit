@@ -27,6 +27,7 @@ from elit.common.torch_component import TorchComponent
 from elit.components.coref.coref_model import MlCorefModel
 from elit.components.coref.tensorizer import Tensorizer, CorefInstance
 from elit.components.coref.dto import CorefInput, CorefOutput
+from elit.components.coref.util import flatten
 
 
 class CoreferenceResolver(TorchComponent):
@@ -144,8 +145,8 @@ class CoreferenceResolver(TorchComponent):
             span_starts, span_ends, span_mention_scores, antecedent_idx, antecedent_scores = self.model(**inputs)
         inst = self._get_predicted_clusters(inst, span_starts, span_ends, span_mention_scores, antecedent_idx,
                                             antecedent_scores, inst.uttr_start_idx[-1],
-                                            allow_singleton=False, return_prob=data.return_prob)
-        output = inst.generate_output(verbose=data.verbose)
+                                            allow_singleton=False, return_prob=data.return_prob)  # No singletons
+        output = inst.generate_output(flatten(data.doc_or_uttr), verbose=data.verbose, online=False)
         return output
 
     def _predict_online(self, data: CorefInput, allow_singleton: bool = True,
@@ -180,7 +181,7 @@ class CoreferenceResolver(TorchComponent):
         inst = self._get_predicted_clusters(inst, span_starts, span_ends, span_mention_scores, antecedent_idx,
                                             antecedent_scores, inst.uttr_start_idx[-1],
                                             allow_singleton=allow_singleton, return_prob=data.return_prob)
-        output = inst.generate_output(verbose=data.verbose)
+        output = inst.generate_output(flatten(data.doc_or_uttr), verbose=data.verbose, online=True)
         return output
 
     @classmethod
