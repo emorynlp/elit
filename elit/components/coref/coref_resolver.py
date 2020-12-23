@@ -129,7 +129,24 @@ class CoreferenceResolver(TorchComponent):
         return output
 
     def _predict_doc(self, data: CorefInput) -> CorefOutput:
-        raise NotImplementedError()
+        inst: CorefInstance = self.tensorizer.encode_online(data)
+        inputs = {
+            'input_ids': inst.input_ids.unsqueeze(0),
+            'input_mask': inst.input_mask.unsqueeze(0),
+            'speaker_ids': inst.speaker_ids,
+            'genre': inst.genre_id,
+            'sentence_map': inst.sentence_map
+        }
+        inputs = {k: v.to(self.torch_device) for k, v in inputs.items()}
+
+        # self.model.eval()
+        with torch.no_grad():
+            span_starts, span_ends, span_mention_scores, antecedent_idx, antecedent_scores = self.model(**inputs)
+        inst = self._get_predicted_clusters(inst, span_starts, span_ends, span_mention_scores, antecedent_idx,
+                                            antecedent_scores, inst.uttr_start_idx[-1],
+                                            allow_singleton=False, return_prob=data.return_prob)
+        output = inst.generate_output(verbose=data.verbose)
+        return output
 
     def _predict_online(self, data: CorefInput, allow_singleton: bool = True,
                         check_sanitization: bool = False) -> CorefOutput:
@@ -169,11 +186,11 @@ class CoreferenceResolver(TorchComponent):
     @classmethod
     def _get_predicted_antecedents(cls, antecedent_idx: List[List[int]], antecedent_scores: torch.Tensor):
         predicted_antecedents = []
-        for i, idx in enumerate(torch.argmax(antecedent_scores, dim=1) - 1):
+        for i, idx in enumerate((torch.argmax(antecedent_scores, dim=1) - 1).tolist()):
             if idx < 0:
                 predicted_antecedents.append(-1)
             else:
-                predicted_antecedents.append(antecedent_idx[i][idx.item()])
+                predicted_antecedents.append(antecedent_idx[i][idx])
         return predicted_antecedents
 
     @classmethod
@@ -201,7 +218,7 @@ class CoreferenceResolver(TorchComponent):
             if return_prob:
                 probs = torch.nn.functional.softmax(antecedent_scores[i]).tolist()
                 for antecedent_i, prob in zip([i] + antecedent_idx[i], probs):
-                    if prob > 1e-6:
+                    if prob > 0.1:
                         antecedent_tok = (subtoken_map[span_starts[antecedent_i]],subtoken_map[span_ends[antecedent_i]])
                         linking_prob[mention_tok][antecedent_tok] = prob
                         linking_prob[antecedent_tok][mention_tok] = prob

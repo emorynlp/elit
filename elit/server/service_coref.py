@@ -52,7 +52,7 @@ class ServiceCoreference:
             speaker_ids=input_doc.speaker_ids,
             genre=input_doc.genre,
             context=self._translate_context(input_doc.coref_context),
-            return_prob=input_doc.return_prob,
+            return_prob=input_doc.return_coref_prob,
             language=input_doc.language,
             verbose=True if self.identifier == 'ocr' else input_doc.verbose
         )
