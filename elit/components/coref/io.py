@@ -50,20 +50,26 @@ class CorefOutput:
         self.speaker_ids = speaker_ids
         self.uttr_start_idx = uttr_start_idx
 
+    def __len__(self):
+        return 0 if self.input_ids is None else len(self.input_ids)
+
 
 class CorefInput:
     def __init__(self,
                  doc_or_uttr: List[List[str]],
                  speaker_ids: Union[int, List[int]] = None,
+                 genre: str = None,
                  context: CorefOutput = None):
         """
         Coreference input model.
 
         Args:
             doc_or_uttr (): one entire document or one utterance; already tokenized
-            speaker_ids (): single speaker id for the utterance or document, or list of speakers for each sentence
+            speaker_ids (): speaker id for the utterance or document, or list of ids for each sentence; id starts from 1
+            genre (): see :meth:`elit.components.coref.coref_resolver.CoreferenceResolver.available_genres`
             context (): the output of previous utterance for online coreference
         """
         self.doc_or_uttr = doc_or_uttr
         self.speaker_ids = speaker_ids
+        self.genre = genre
         self.context = context

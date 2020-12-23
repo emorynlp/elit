@@ -96,20 +96,25 @@ class Tensorizer:
     def get_speaker_token(self, speaker_id):
         return f'[SPK{speaker_id}]'
 
-    def available_genres(self):
-        return self.genres[:]
+    def encode_doc(self, inputs: CorefInput) -> CorefInstance:
+        """
+        Process input for document coreference resolution.
 
-    def encode_doc(self):
+        Returns:
+
+        """
         raise NotImplementedError()
 
-    def encode_online(self, utterance, speaker_id=None, genre=None, context_inst=None):
+    def encode_online(self, inputs: CorefInput) -> CorefInstance:
         """
-        utterance: tokenized string
-        speaker_id: 1-max_speakers
-        genre: see available_genres()
-        """
-        tokenizer = self.tokenizer
+        Process input for online coreference resolution.
 
+        Args:
+            inputs ():
+
+        Returns:
+
+        """
         def create_inst(input_ids, sentence_map, subtoken_map, speaker_ids, uttr_start_idx, genre, mentions):
             """ Input: without considering CLS, SEP """
             inst = CorefInstance(
@@ -126,16 +131,23 @@ class Tensorizer:
             )
             return inst
 
-        sentence_idx, token_idx = 0, 0
-        if context_inst is not None:
-            sentence_idx = context_inst.sentence_map[-1].item()
-            token_idx = context_inst.subtoken_map[-1] + 1
+        tokenizer = self.tokenizer
+        utterance, speaker_id, genre, context = inputs.doc_or_uttr, inputs.speaker_ids, inputs.genre, inputs.context
+        # Assign speaker id if needed; only one speaker per utterance
+        if isinstance(speaker_id, list):
+            speaker_id = speaker_id[0] if len(speaker_id) > 0 else 1
         if not speaker_id:
             speaker_id = 1
-        if genre is None:
+        # Assign default genre is needed
+        if genre is None or genre not in self.genres:
             genre = 'en' if 'en' in self.genres else self.genres[0]
+        # Assign global sentence and token idx offset
+        sentence_idx, token_idx = 0, 0
+        if context is not None:
+            sentence_idx = context.sentence_map[-1]
+            token_idx = context.subtoken_map[-1] + 1
 
-        # Current utterance
+        # Process current utterance
         subtokens, sentence_map, subtoken_map = [], [], []
         if self.add_sep_token:
             subtokens.append(tokenizer.sep_token)
@@ -159,7 +171,7 @@ class Tensorizer:
             sentence_map = sentence_map[:self.max_segment_len - 2]
             subtoken_map = subtoken_map[:self.max_segment_len - 2]
 
-        if context_inst is None:
+        if context is None:
             inst = create_inst(
                 input_ids=tokenizer.convert_tokens_to_ids(subtokens),
                 sentence_map=sentence_map, subtoken_map=subtoken_map,
@@ -169,68 +181,64 @@ class Tensorizer:
             )
             return inst
 
-        # Add context
-        prev_sep_idx = len(context_inst) - 1  # The middle SEP
+        # Process context
+        prev_sep_idx = len(context) - 1  # The middle SEP
         if self.add_sep_token:
-            prev_sep_idx = context_inst.uttr_start_idx[-1] - 1
-        context_start_idx = len(context_inst)
-        for idx in context_inst.uttr_start_idx:
-            if len(context_inst) - idx + len(subtokens) + (0 if self.add_sep_token else 1) <= self.max_segment_len:
+            prev_sep_idx = context.uttr_start_idx[-1] - 1
+        context_start_idx = len(context)
+        for idx in context.uttr_start_idx:
+            if len(context) - idx + len(subtokens) + (0 if self.add_sep_token else 1) <= self.max_segment_len:
                 context_start_idx = idx
                 break
 
         if not self.add_sep_token or context_start_idx > prev_sep_idx:
-            # No SEP with any context utterances; or use SEP with at most one context utterance
-            # Context token offset: no need to adjust SEP
-            uttr_start_idx = [idx - context_start_idx for idx in context_inst.uttr_start_idx if
-                              idx - context_start_idx >= 0]
+            # Cases: no SEP with any context utterances; or use SEP with at most one context utterance
+            # No need to adjust context token offset
+            uttr_start_idx = [idx - context_start_idx for idx in context.uttr_start_idx if idx - context_start_idx >= 0]
             if len(uttr_start_idx) == 0:
                 uttr_start_idx = [1 if self.add_sep_token else 0]
             else:
                 if self.add_sep_token:
                     assert uttr_start_idx == [0]
-                uttr_start_idx = [0, (len(context_inst) - context_start_idx - (0 if self.add_sep_token else 1))]
+                uttr_start_idx = [0, (len(context) - context_start_idx - (0 if self.add_sep_token else 1))]
 
             mentions = []
-            for m in context_inst.mentions:
+            for m in context.mentions:
                 if m[0] >= context_start_idx:
                     mentions.append((m[0] - context_start_idx, m[1] - context_start_idx))
 
             inst = create_inst(
-                input_ids=context_inst.input_ids[context_start_idx:-1].tolist() + tokenizer.convert_tokens_to_ids(
-                    subtokens),
-                sentence_map=context_inst.sentence_map[context_start_idx:-1].tolist() + sentence_map,
-                subtoken_map=context_inst.subtoken_map[context_start_idx:-1] + subtoken_map,
-                speaker_ids=context_inst.speaker_ids[context_start_idx:-1].tolist() + [speaker_id] * len(subtokens)
+                input_ids=context.input_ids[context_start_idx:-1] + tokenizer.convert_tokens_to_ids(subtokens),
+                sentence_map=context.sentence_map[context_start_idx:-1] + sentence_map,
+                subtoken_map=context.subtoken_map[context_start_idx:-1] + subtoken_map,
+                speaker_ids=context.speaker_ids[context_start_idx:-1] + [speaker_id] * len(subtokens)
                 if self.use_speaker_indicator else [],
                 uttr_start_idx=uttr_start_idx, genre=genre, mentions=mentions
             )
         else:
-            # Use SEP and have at least two context utterances
-            # Context token offset: adjust SEP for last context utterance
-            uttr_start_idx = [idx - context_start_idx for idx in context_inst.uttr_start_idx if
-                              idx - context_start_idx >= 0]
+            # Case: use SEP and have at least two context utterances
+            # Adjust context token offset of the last context utterance because of SEP
+            uttr_start_idx = [idx - context_start_idx for idx in context.uttr_start_idx if idx - context_start_idx >= 0]
             assert len(uttr_start_idx) > 1
             uttr_start_idx[-1] -= 1  # Adjust for SEP
-            uttr_start_idx.append(len(context_inst) - context_start_idx - 1)
+            uttr_start_idx.append(len(context) - context_start_idx - 1)
 
             mentions = []
-            for m in context_inst.mentions:
+            for m in context.mentions:
                 if context_start_idx <= m[0] < prev_sep_idx:
                     mentions.append((m[0] - context_start_idx, m[1] - context_start_idx))
                 elif m[0] >= context_start_idx and m[0] > prev_sep_idx:
                     mentions.append((m[0] - context_start_idx - 1, m[1] - context_start_idx - 1))  # Adjust for SEP
 
             inst = create_inst(
-                input_ids=context_inst.input_ids[context_start_idx:prev_sep_idx].tolist() +
-                          context_inst.input_ids[prev_sep_idx + 1:-1].tolist() + tokenizer.convert_tokens_to_ids(
-                    subtokens),
-                sentence_map=context_inst.sentence_map[context_start_idx:prev_sep_idx].tolist() +
-                             context_inst.sentence_map[prev_sep_idx + 1:-1].tolist() + sentence_map,
-                subtoken_map=context_inst.subtoken_map[context_start_idx:prev_sep_idx] +
-                             context_inst.subtoken_map[prev_sep_idx + 1:-1] + subtoken_map,
-                speaker_ids=context_inst.speaker_ids[context_start_idx:prev_sep_idx].tolist() +
-                            context_inst.speaker_ids[prev_sep_idx + 1:-1].tolist() + [speaker_id] * len(subtokens)
+                input_ids=context.input_ids[context_start_idx:prev_sep_idx] +
+                          context.input_ids[prev_sep_idx + 1:-1] + tokenizer.convert_tokens_to_ids(subtokens),
+                sentence_map=context.sentence_map[context_start_idx:prev_sep_idx] +
+                             context.sentence_map[prev_sep_idx + 1:-1] + sentence_map,
+                subtoken_map=context.subtoken_map[context_start_idx:prev_sep_idx] +
+                             context.subtoken_map[prev_sep_idx + 1:-1] + subtoken_map,
+                speaker_ids=context.speaker_ids[context_start_idx:prev_sep_idx] +
+                            context.speaker_ids[prev_sep_idx + 1:-1] + [speaker_id] * len(subtokens)
                 if self.use_speaker_indicator else [],
                 uttr_start_idx=uttr_start_idx, genre=genre, mentions=mentions
             )
