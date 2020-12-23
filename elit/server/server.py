@@ -1,6 +1,21 @@
+# ========================================================================
+# Copyright 2020 Emory University
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========================================================================
+
 # -*- coding:utf-8 -*-
-# Author: hankcs
-# Date: 2020-12-13 19:02
+# Author: hankcs, Liyan Xu
 import asyncio
 import functools
 import traceback
@@ -10,11 +25,26 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.logger import logger
 from elit.common.document import Document
-from elit.server.en import en
+from elit.server.en import en_services
 from elit.server.format import Input
-from elit.server.service import Service
+from elit.server.service_tokenizer import ServiceTokenizer
+from elit.server.service_parser import ServiceParser
+from elit.server.service_coref import ServiceCoreference
 
 app = FastAPI()
+
+
+class RunningServices:
+    def __init__(self,
+                 tokenizer: ServiceTokenizer = None,
+                 parser: ServiceParser = None,
+                 doc_coref: ServiceCoreference = None,
+                 online_coref: ServiceCoreference = None):
+        self.tokenizer = tokenizer
+        self.parser = parser
+        self.doc_coref = doc_coref
+        self.online_coref = online_coref
+        self.emotion_detection = None
 
 
 class HandlingError(Exception):
@@ -25,7 +55,7 @@ class HandlingError(Exception):
 
 
 class ModelRunner(object):
-    def __init__(self, service: Service, max_queue_size=128, max_batch_size=32, max_wait=0.05):
+    def __init__(self, services: RunningServices, max_queue_size=128, max_batch_size=32, max_wait=0.05):
         """
 
         Args:
@@ -33,7 +63,7 @@ class ModelRunner(object):
             max_batch_size: we put at most MAX_BATCH_SIZE things in a single batch
             max_wait: we wait at most MAX_WAIT seconds before running for more inputs to arrive in batching
         """
-        self.service = service
+        self.services = services
         self.max_wait = max_wait
         self.max_batch_size = max_batch_size
         self.max_queue_size = max_queue_size
@@ -68,7 +98,8 @@ class ModelRunner(object):
 
     def run_model(self, batch: List[Input]) -> List[Any]:  # runs in other thread
         try:
-            return self.service.parse(batch)
+            batch = self.services.tokenizer.tokenize_inputs(batch)
+            return self.services.parser.parse(batch)
         except Exception as e:
             traceback.print_exc()
             return [e for _ in batch]
@@ -112,7 +143,7 @@ async def startup_event():
     asyncio.create_task(runner.model_runner())
 
 
-runner = ModelRunner(en)
+runner = ModelRunner(en_services)
 
 
 # noinspection PyShadowingBuiltins
