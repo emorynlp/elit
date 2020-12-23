@@ -39,7 +39,7 @@ class Input(BaseModel):
     speaker_ids: Union[int, List[int]] = None
     genre: str = None
     coref_context: OnlineCorefContext = None
-    return_prob: bool = True
+    return_coref_prob: bool = False
 
     language: str = 'en'
     verbose: bool = True

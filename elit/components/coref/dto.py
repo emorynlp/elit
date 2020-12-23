@@ -71,7 +71,7 @@ class CorefInput:
                  speaker_ids: Union[int, List[int]] = None,
                  genre: str = None,
                  context: CorefOutput = None,
-                 return_prob: bool = True,
+                 return_prob: bool = False,
                  language: str = 'en',
                  verbose: bool = True
     ):

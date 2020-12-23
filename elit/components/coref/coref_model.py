@@ -22,7 +22,6 @@ from transformers import BertModel
 import logging
 from collections import Iterable
 import torch.nn.init as init
-import math
 
 import elit.components.coref.higher_order as ho
 import elit.components.coref.util as util
@@ -47,7 +46,7 @@ class MlCorefModel(nn.Module):
 
         # Model
         self.dropout = nn.Dropout(p=config['dropout_rate'])
-        self.bert = BertModel.from_pretrained(config['bert_pretrained_name_or_path'])
+        self.bert = BertModel.from_pretrained('bert-base-cased' if self.max_seg_len == 384 else 'bert-large-cased')
         if config['add_speaker_token']:
             self.bert.resize_token_embeddings(util.get_vocab_size(config))
 
