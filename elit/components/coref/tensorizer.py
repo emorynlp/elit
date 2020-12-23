@@ -36,7 +36,7 @@ class CorefInstance:
                  speaker_ids: torch.Tensor = None,
                  genre_id: torch.Tensor = None,
                  uttr_start_idx: List[int] = None,
-                 mentions: List[Tuple[int]] = None):
+                 mentions: List[Tuple[int, int]] = None):
         self.input_ids = input_ids
         self.input_mask = input_mask
         self.sentence_map = sentence_map
@@ -48,7 +48,8 @@ class CorefInstance:
         # To be updated during prediction
         self.mentions = mentions
         self.clusters = None
-        self.mention_to_cluster_id = {}
+        self.mention_to_cluster_id = None
+        self.linking_prob = None
 
     def generate_output(self, verbose: bool = True) -> CorefOutput:
         """
@@ -68,7 +69,8 @@ class CorefInstance:
                 subtoken_map=self.subtoken_map,
                 speaker_ids=self.speaker_ids.tolist(),
                 uttr_start_idx=self.uttr_start_idx,
-                mentions=self.mentions
+                mentions=self.mentions,
+                linking_prob=self.linking_prob
             )
         else:
             output = CorefOutput(clusters=self.clusters)
