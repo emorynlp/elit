@@ -54,15 +54,24 @@ en_services = BundledServices(
 
 
 def main():
-    text = [
-        "Emory NLP is a research lab in Atlanta, GA. "
-        "It is founded by Jinho D. Choi in 2014. Dr. Choi is a professor at Emory University."
-    ]
-    input = Input(text=text)
-    input.models = ['lem']
-    docs = en_services.parser.parse([input])
-    for doc in docs:
-        print(doc)
+    # text = [
+    #     "Emory NLP is a research lab in Atlanta, GA. "
+    #     "It is founded by Jinho D. Choi in 2014. Dr. Choi is a professor at Emory University."
+    # ]
+    # input = Input(text=text)
+    # input.models = ['lem']
+    # docs = en_services.parser.parse([input])
+    # for doc in docs:
+    #     print(doc)
+
+    text = 'Pfizer said last week it may need the U.S. government to help it secure some components needed to ' \
+           'make the vaccine. While the company halved its 2020 production target due to manufacturing issues, ' \
+           'it said last week its manufacturing is running smoothly now. The government also has the option to ' \
+           'acquire up to an additional 400 million doses of the vaccine.'
+    input_doc = Input(text=text)
+    input_doc.models = ['dcr']
+    doc = service_doc_coref.predict(input_doc)
+    print(doc)
 
 
 if __name__ == '__main__':

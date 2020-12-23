@@ -16,7 +16,7 @@
 
 # -*- coding:utf-8 -*-
 # Author: Liyan Xu
-from typing import List, Callable, Union
+from typing import List, Callable, Union, Optional
 
 from elit.components.coref.dto import CorefInput, CorefOutput
 from elit.server.service_tokenizer import ServiceTokenizer
@@ -32,7 +32,7 @@ class ServiceCoreference:
                  service_tokenizer: ServiceTokenizer) -> None:
         self.model = model
         self.service_tokenizer = ServiceTokenizer(eos, tokenize) if service_tokenizer is None else service_tokenizer
-        self.online: bool = self.model.config['online']
+        self.identifier = 'ocr' if self.model.config['online'] else 'dcr'
 
     def _translate_context(self, context: OnlineCorefContext) -> CorefOutput:
         return CorefOutput(
@@ -44,7 +44,9 @@ class ServiceCoreference:
             speaker_ids=context.speaker_ids
         )
 
-    def _translate_to_coref(self, input_doc: Input) -> CorefInput:
+    def _translate_to_coref(self, input_doc: Input) -> Optional[CorefInput]:
+        if self.identifier not in input_doc.models:
+            return None
         return CorefInput(
             doc_or_uttr=input_doc.tokens,
             speaker_ids=input_doc.speaker_ids,
@@ -52,26 +54,31 @@ class ServiceCoreference:
             context=self._translate_context(input_doc.coref_context),
             return_prob=input_doc.return_prob,
             language=input_doc.language,
-            verbose=True if self.online else input_doc.verbose
+            verbose=True if self.identifier == 'ocr' else input_doc.verbose
         )
 
-    def _translate_from_coref(self, coref_output: CorefOutput, input_doc: Input) -> Document:
-        identifier = 'ocr' if self.online else 'dcr'
-        return Document({
-            'tokens': input_doc.tokens,
-            identifier: coref_output
-        })
+    def _translate_from_coref(self, coref_output: Optional[CorefOutput], input_doc: Input) -> Document:
+        if coref_output is None:
+            return Document({'tokens': input_doc.tokens})
+        else:
+            return Document({
+                'tokens': input_doc.tokens,
+                self.identifier: coref_output
+            })
 
-    def _predict_single(self, coref_input: CorefInput) -> CorefOutput:
+    def _predict_single(self, coref_input: Optional[CorefInput]) -> Optional[CorefOutput]:
+        if coref_input is None:
+            return None
         return self.model(coref_input)
 
     def predict(self, inputs: Union[Input, List[Input]]) -> Union[Document, List[Document]]:
-        """ Sequential prediction on multiple input docs"""
+        """ Sequential prediction on multiple input docs. """
         self.service_tokenizer.tokenize_inputs(inputs)  # no effects (read-only) in server pipeline
 
         if isinstance(inputs, Input):
-            return self._translate_from_coref(self._predict_single(self._translate_to_coref(inputs)))
+            return self._translate_from_coref(self._predict_single(self._translate_to_coref(inputs)), inputs)
 
         coref_inputs = [self._translate_to_coref(input_doc) for input_doc in inputs]
-        output_docs = [self._translate_from_coref(self._predict_single(coref_input)) for coref_input in coref_inputs]
+        output_docs = [self._translate_from_coref(self._predict_single(coref_input), inputs[i])
+                       for i, coref_input in enumerate(coref_inputs)]
         return output_docs

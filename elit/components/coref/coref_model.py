@@ -287,39 +287,11 @@ class MlCorefModel(nn.Module):
                     top_antecedent_distance)
 
             # Get final pairwise scores and related info
-            if not conf['use_self_attended_spans']:
-                top_pairwise_scores, cluster_merging_scores, top_span_emb, (
-                    target_emb, top_antecedent_emb, similarity_emb) = \
-                    self.get_final_pairwise_scores(top_span_emb, top_antecedent_idx, genre_emb, same_speaker_emb,
-                                                   seg_distance_emb, top_antecedent_distance_emb,
-                                                   top_pairwise_fast_scores)
-            else:
-                query_layer = self.query_mapping(top_span_emb)
-                key_layer = self.key_mapping(top_span_emb)
-                value_layer = top_span_emb
-                if conf['use_value_mapping']:
-                    value_layer = self.value_mapping(top_span_emb)
-                attention_scores = torch.matmul(query_layer,
-                                                key_layer.transpose(-1, -2))
-                attention_scores = attention_scores / math.sqrt(query_layer.shape[-1])
-                attention_probs = nn.Softmax(dim=-1)(attention_scores)
-                attention_probs = self.dropout(attention_probs)
-                context_layer = torch.matmul(attention_probs, value_layer)
-                self_attended_span_emb = context_layer
-
-                pairwise_scores, cluster_merging_scores, top_span_emb, (
-                    target_emb, top_antecedent_emb, similarity_emb) = \
-                    self.get_final_pairwise_scores(top_span_emb, top_antecedent_idx, genre_emb, same_speaker_emb,
-                                                   seg_distance_emb, top_antecedent_distance_emb,
-                                                   pairwise_fast_scores=None)
-                pairwise_scores_self_attended, _, self_attended_span_emb, _ = self.get_final_pairwise_scores(
-                    self_attended_span_emb, top_antecedent_idx, genre_emb, same_speaker_emb, seg_distance_emb,
-                    top_antecedent_distance_emb, pairwise_fast_scores=None)
-                if conf['rank_one_rounds']:
-                    top_pairwise_scores = top_pairwise_fast_scores + pairwise_scores_self_attended
-                else:
-                    top_pairwise_scores = top_pairwise_fast_scores + \
-                                          0.5 * pairwise_scores + 0.5 * pairwise_scores_self_attended
+            top_pairwise_scores, cluster_merging_scores, top_span_emb, (
+                target_emb, top_antecedent_emb, similarity_emb) = \
+                self.get_final_pairwise_scores(top_span_emb, top_antecedent_idx, genre_emb, same_speaker_emb,
+                                               seg_distance_emb, top_antecedent_distance_emb,
+                                               top_pairwise_fast_scores)
 
         if conf['higher_order'] == 'cluster_merging':
             top_pairwise_scores += cluster_merging_scores
