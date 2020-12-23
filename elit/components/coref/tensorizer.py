@@ -51,17 +51,24 @@ class CorefInstance:
         self.mention_to_cluster_id = None
         self.linking_prob = None
 
-    def generate_output(self, verbose: bool = True) -> CorefOutput:
+    def generate_output(self, tokens: List[str], verbose: bool = True, online: bool = False) -> CorefOutput:
         """
         Helper method to generate corresponding coreference output.
 
         Args:
-            verbose (): must be true for online coreference to keep context
+            tokens (): flattened input original tokens
+            verbose (): true to display text in clusters
+            online (): true to include context for online coreference
 
         Returns:
 
         """
         if verbose:
+            for cluster in self.clusters:
+                for i in range(len(cluster)):
+                    m1, m2 = cluster[i]
+                    cluster[i] = (m1, m2, ' '.join(tokens[m1:m2+1]))
+        if online:
             output = CorefOutput(
                 clusters=self.clusters,
                 input_ids=self.input_ids.tolist(),
