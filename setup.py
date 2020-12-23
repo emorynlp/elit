@@ -34,7 +34,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url='https://github.com/emorynlp/elit',
-    author='Han He',
+    author='Han He, Liyan Xu',
     license='Apache License 2.0',
     classifiers=[
         'Intended Audience :: Science/Research',
@@ -62,6 +62,7 @@ setup(
         'fastapi',
         'transformers',
         'scipy',
+        'pyhocon'
     ],
     python_requires='>=3.6',
     entry_points={
