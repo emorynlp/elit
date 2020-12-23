@@ -20,14 +20,13 @@ from typing import Union, List, Tuple
 from pydantic import BaseModel
 
 
-class OnlineCorefInput(BaseModel):
+class OnlineCorefContext(BaseModel):
     # Required
     inputs_ids: List[int]
     sentence_map: List[int]
     subtoken_map: List[int]
     # Optional
     speaker_ids: List[int] = None
-    genre: str = None
     uttr_start_idx: List[int] = None
     mentions: List[Tuple[int]] = None
 
@@ -35,7 +34,9 @@ class OnlineCorefInput(BaseModel):
 class Input(BaseModel):
     text: Union[str, List[str]] = None
     tokens: List[List[str]] = None
-    context_coref: OnlineCorefInput = None
     models: List[str] = ["lem", "pos", "ner", "con", "dep", "srl", "amr", "dcr", "ocr"]
+    coref_context: OnlineCorefContext = None
+    speaker_ids: Union[int, List[int]] = None
+    genre: str = None
     language: str = 'en'
     verbose: bool = True

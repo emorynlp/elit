@@ -31,12 +31,12 @@ logger = logging.getLogger(__name__)
 
 
 class MlCorefModel(nn.Module):
-    """ A simplified mention-linking model that strips out certain components and loss. """
+    """ A simplified mention-linking model omitting certain components and loss. """
 
-    def __init__(self, config, device):
+    def __init__(self, config, device=None):
         super().__init__()
         self.config = config
-        self.device = device
+        self.device = torch.device('cpu') if device is None else device
 
         if config['coref_depth'] > 1 or config['higher_order'] == 'cluster_merging':
             assert config['fine_grained']
@@ -173,12 +173,6 @@ class MlCorefModel(nn.Module):
         candidate_end_sent_idx = sentence_indices[torch.min(candidate_ends, torch.tensor(num_words - 1, device=device))]
         candidate_mask = (candidate_ends < num_words) & (candidate_start_sent_idx == candidate_end_sent_idx)
         candidate_starts, candidate_ends = candidate_starts[candidate_mask], candidate_ends[candidate_mask]
-        if gold_mention_cluster_map is not None:
-            context_mention_starts, context_mention_ends = gold_starts[gold_ends < uttr_start_idx], \
-                                                           gold_ends[gold_ends < uttr_start_idx]
-            context_mention_mask = (context_mention_ends - context_mention_starts) < self.max_span_width
-            context_mention_starts, context_mention_ends = context_mention_starts[context_mention_mask], \
-                                                           context_mention_ends[context_mention_mask]
         candidate_starts = torch.cat([context_mention_starts, candidate_starts])
         candidate_ends = torch.cat([context_mention_ends, candidate_ends])
         num_candidates = candidate_starts.shape[0]

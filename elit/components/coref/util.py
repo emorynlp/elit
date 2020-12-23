@@ -21,32 +21,12 @@ import torch
 from transformers import BertTokenizer
 
 
-def create_online_coref_input_from_output(coref_output: dict, deep_copy: bool = False) -> dict:
-    coref_input = {
-        'inputs_ids': None,
-        'sentence_map': None,
-        'subtoken_map': None,
-        'speaker_ids': None,
-        'genre': None,
-        'uttr_start_idx': None,
-        'mentions': None
-    }
-    for k in coref_input.keys():
-        v = coref_output.get(k, None)
-        if v is not None:
-            coref_input[k] = v
-
-    if deep_copy:
-        coref_input = deepcopy(coref_input)
-    return coref_input
-
-
 def flatten(l):
     return [item for sublist in l for item in sublist]
 
 
-def get_vocab_size(config, tokenizer=None):
-    tokenizer = BertTokenizer.from_pretrained(config['bert_tokenizer_name']) if tokenizer is None else tokenizer
+def get_vocab_size(config):
+    tokenizer = BertTokenizer.from_pretrained(config['bert_tokenizer_name'])
     if config['add_speaker_token']:
         return len(tokenizer) + config['max_num_speakers'] + 1
     else:

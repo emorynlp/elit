@@ -16,7 +16,7 @@
 
 # -*- coding:utf-8 -*-
 # Author: Liyan Xu
-from typing import Union, List, Tuple
+from typing import Union, List, Tuple, Dict
 
 
 class CorefOutput:
@@ -25,9 +25,10 @@ class CorefOutput:
                  input_ids: List[int] = None,
                  sentence_map: List[int] = None,
                  subtoken_map: List[int] = None,
-                 mentions: List[Tuple[int]] = None,
+                 mentions: List[Tuple[int, int]] = None,
                  speaker_ids: List[int] = None,
-                 uttr_start_idx: List[int] = None
+                 uttr_start_idx: List[int] = None,
+                 linking_prob: Dict[Tuple[int, int], Dict[Tuple[int, int], float]] = None
                  ):
         """
         Coreference output model.
@@ -41,6 +42,7 @@ class CorefOutput:
             mentions (): by subtoken
             speaker_ids (): by subtoken
             uttr_start_idx (): by subtoken
+            linking_prob (): by global original token indices, same as clusters
         """
         self.input_ids = input_ids
         self.sentence_map = sentence_map
@@ -49,6 +51,12 @@ class CorefOutput:
         self.clusters = clusters
         self.speaker_ids = speaker_ids
         self.uttr_start_idx = uttr_start_idx
+        self.linking_prob = linking_prob
+
+    def prepare_as_next_online_context(self):
+        self.clusters = None
+        self.linking_prob = None
+        return self
 
     def __len__(self):
         return 0 if self.input_ids is None else len(self.input_ids)
@@ -59,7 +67,11 @@ class CorefInput:
                  doc_or_uttr: List[List[str]],
                  speaker_ids: Union[int, List[int]] = None,
                  genre: str = None,
-                 context: CorefOutput = None):
+                 context: CorefOutput = None,
+                 return_prob: bool = False,
+                 language: str = 'en',
+                 verbose: bool = True
+    ):
         """
         Coreference input model.
 
@@ -67,9 +79,15 @@ class CorefInput:
             doc_or_uttr (): one entire document or one utterance; already tokenized
             speaker_ids (): speaker id for the utterance or document, or list of ids for each sentence; id starts from 1
             genre (): see :meth:`elit.components.coref.coref_resolver.CoreferenceResolver.available_genres`
-            context (): the output of previous utterance for online coreference
+            context (): see :meth:`elit.components.coref.io.CorefOutput.prepare_as_next_online_context`
+            return_prob (): whether return the mention linking probability
+            language ():
+            verbose ():
         """
         self.doc_or_uttr = doc_or_uttr
         self.speaker_ids = speaker_ids
         self.genre = genre
         self.context = context
+        self.return_prob = return_prob
+        self.language = language
+        self.verbose = verbose
