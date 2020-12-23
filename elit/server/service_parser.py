@@ -7,6 +7,7 @@ from typing import List, Callable
 from elit.common.document import Document
 from elit.server.format import Input
 from elit.server.service_tokenizer import ServiceTokenizer
+from elit.server.en_util import eos, tokenize
 
 
 class ServiceParser(object):
@@ -16,13 +17,13 @@ class ServiceParser(object):
                  service_tokenizer: ServiceTokenizer) -> None:
         super().__init__()
         self.model = model
-        self.service_tokenizer = service_tokenizer
+        self.service_tokenizer = ServiceTokenizer(eos, tokenize) if service_tokenizer is None else service_tokenizer
 
     def parse_sents(self, sents: List[List[str]], tasks: List[str] = None) -> Document:
         return self.model(sents, tasks=tasks)
 
     def parse(self, inputs: List[Input]) -> List[Document]:
-        self.service_tokenizer.tokenize_inputs(inputs)
+        self.service_tokenizer.tokenize_inputs(inputs)  # no effects (read-only) in server pipeline
 
         # We shall group by models
         inputs_by_tasks = defaultdict(list)

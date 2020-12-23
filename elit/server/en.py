@@ -24,15 +24,16 @@ from elit.server.service_tokenizer import ServiceTokenizer
 from elit.server.service_parser import ServiceParser
 from elit.server.service_coref import ServiceCoreference
 from elit.server.en_util import eos, tokenize
-from elit.server.server import RunningServices
+from elit.server.server import BundledServices
 
 
 service_tokenizer = ServiceTokenizer(eos, tokenize)
 
-service_parser = ServiceParser(
-    model=elit.load(LEM_POS_NER_DEP_SDP_CON_AMR_ROBERTA_BASE_EN),
-    service_tokenizer=service_tokenizer
-)
+# service_parser = ServiceParser(
+#     model=elit.load(LEM_POS_NER_DEP_SDP_CON_AMR_ROBERTA_BASE_EN),
+#     service_tokenizer=service_tokenizer
+# )
+service_parser = None
 
 service_doc_coref = ServiceCoreference(
     model=elit.load(DOC_COREF_SPANBERT_LARGE_EN),
@@ -44,7 +45,7 @@ service_online_coref = ServiceCoreference(
     service_tokenizer=service_tokenizer
 )
 
-en_services = RunningServices(
+en_services = BundledServices(
     tokenizer=service_tokenizer,
     parser=service_parser,
     doc_coref=service_doc_coref,

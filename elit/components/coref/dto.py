@@ -21,13 +21,13 @@ from typing import Union, List, Tuple, Dict
 
 class CorefOutput:
     def __init__(self,
-                 clusters: List[List[Tuple[int]]],
+                 clusters: List[List[Tuple[int]]] = None,
                  input_ids: List[int] = None,
                  sentence_map: List[int] = None,
                  subtoken_map: List[int] = None,
                  mentions: List[Tuple[int, int]] = None,
-                 speaker_ids: List[int] = None,
                  uttr_start_idx: List[int] = None,
+                 speaker_ids: List[int] = None,
                  linking_prob: Dict[Tuple[int, int], Dict[Tuple[int, int], float]] = None
                  ):
         """
@@ -40,17 +40,17 @@ class CorefOutput:
             sentence_map (): by subtoken; map to global sentence indices (cross-utterance for online)
             subtoken_map (): by subtoken; map to global original token indices (cross-utterance for online)
             mentions (): by subtoken
-            speaker_ids (): by subtoken
             uttr_start_idx (): by subtoken
+            speaker_ids (): by subtoken
             linking_prob (): by global original token indices, same as clusters
         """
+        self.clusters = clusters
         self.input_ids = input_ids
         self.sentence_map = sentence_map
         self.subtoken_map = subtoken_map
         self.mentions = mentions
-        self.clusters = clusters
-        self.speaker_ids = speaker_ids
         self.uttr_start_idx = uttr_start_idx
+        self.speaker_ids = speaker_ids
         self.linking_prob = linking_prob
 
     def prepare_as_next_online_context(self):
@@ -68,7 +68,7 @@ class CorefInput:
                  speaker_ids: Union[int, List[int]] = None,
                  genre: str = None,
                  context: CorefOutput = None,
-                 return_prob: bool = False,
+                 return_prob: bool = True,
                  language: str = 'en',
                  verbose: bool = True
     ):

@@ -34,7 +34,7 @@ from elit.server.service_coref import ServiceCoreference
 app = FastAPI()
 
 
-class RunningServices:
+class BundledServices:
     def __init__(self,
                  tokenizer: ServiceTokenizer = None,
                  parser: ServiceParser = None,
@@ -55,7 +55,7 @@ class HandlingError(Exception):
 
 
 class ModelRunner(object):
-    def __init__(self, services: RunningServices, max_queue_size=128, max_batch_size=32, max_wait=0.05):
+    def __init__(self, services: BundledServices, max_queue_size=128, max_batch_size=32, max_wait=0.05):
         """
 
         Args:
