@@ -28,7 +28,8 @@ class CorefOutput:
                  mentions: List[Tuple[int, int]] = None,
                  uttr_start_idx: List[int] = None,
                  speaker_ids: List[int] = None,
-                 linking_prob: Dict[Tuple[int, int], Dict[Tuple[int, int], float]] = None
+                 linking_prob: Dict[Tuple[int, int], Dict[Tuple[int, int], float]] = None,
+                 error_msg: str = None
                  ):
         """
         Coreference output model.
@@ -42,7 +43,8 @@ class CorefOutput:
             mentions (): by subtoken
             uttr_start_idx (): by subtoken
             speaker_ids (): by subtoken
-            linking_prob (): by global original token indices, same as clusters
+            linking_prob (): by global original token indices, same as clusters,
+            error_msg ():
         """
         self.clusters = clusters
         self.input_ids = input_ids
@@ -52,6 +54,7 @@ class CorefOutput:
         self.uttr_start_idx = uttr_start_idx
         self.speaker_ids = speaker_ids
         self.linking_prob = linking_prob
+        self.error_msg = error_msg
 
     def prepare_as_next_online_context(self):
         self.clusters = None

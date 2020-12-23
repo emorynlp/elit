@@ -17,7 +17,7 @@
 # -*- coding:utf-8 -*-
 # Author: Liyan Xu
 import logging
-from typing import Union, List, Callable, Dict
+from typing import Union, List, Callable, Dict, Tuple, Optional
 import torch
 from torch.utils.data import DataLoader
 from collections import defaultdict
@@ -34,7 +34,7 @@ class CoreferenceResolver(TorchComponent):
 
     This component handles either document coreference or online coreference, based on configuration.
     Currently only inference is supported; training-related is not available.
-    Supported operations: build_model(), to(), load(), predict(), available_genres()
+    Supported operations: build_model(), to(), load(), predict(), validate_input(), available_genres, speaker_id_range
     """
 
     def __init__(self) -> None:
@@ -71,8 +71,39 @@ class CoreferenceResolver(TorchComponent):
         super(CoreferenceResolver, self).load(save_dir, devices, **kwargs)
         self.tensorizer = Tensorizer(self.config)
 
-    def available_genres(self):
-        return self.config['genres'][:]
+    @property
+    def available_genres(self) -> List[str]:
+        return self.tensorizer.genres
+
+    @property
+    def speaker_id_range(self) -> Tuple[int, int]:
+        return 1, self.tensorizer.max_speakers
+
+    def validate_input(self, coref_input: CorefInput) -> Optional[str]:
+        if coref_input.speaker_ids:
+            speaker_ids = coref_input.speaker_ids
+            if isinstance(speaker_ids, list) and len(speaker_ids) != len(coref_input.doc_or_uttr):
+                return 'speaker_ids has invalid length'
+            if isinstance(speaker_ids, int):
+                speaker_ids = [speaker_ids]
+            if not all(1 <= spk <= self.tensorizer.max_speakers for spk in speaker_ids):
+                return f'speaker_id exceeds range {self.speaker_id_range}'
+
+        if coref_input.genre:
+            if coref_input.genre not in self.available_genres:
+                return f'genre should be in {self.available_genres}'
+
+        if coref_input.context:
+            context = coref_input.context
+            if not context.input_ids or not context.sentence_map \
+                    or not context.subtoken_map or not context.uttr_start_idx:
+                return 'context should have input_ids, sentence_map, subtoken_map, uttr_start_idx'
+            if not all(length == len(context.input_ids) for length in
+                       [len(context.input_ids), len(context.sentence_map), len(context.subtoken_map)]):
+                return 'context should have equal length for input_ids, sentence_map, subtoken_map'
+            if context.mentions is None or context.speaker_ids is None:
+                return 'context should have mentions and speaker_ids (can be empty list)'
+        return None
 
     def predict(self, data: CorefInput, **kwargs) -> CorefOutput:
         """
@@ -81,12 +112,15 @@ class CoreferenceResolver(TorchComponent):
         Resolve either document coreference or online coreference based on configuration.
         Args:
             data ():
-            batch_size ():
             **kwargs ():
 
         Returns:
 
         """
+        error_msg = self.validate_input(data)
+        if error_msg:
+            return CorefOutput(error_msg=error_msg)
+
         if self.config['online']:
             output = self._predict_online(data, allow_singleton=kwargs.get('allow_singleton', True),
                                           check_sanitization=kwargs.get('check_sanitization', False))
