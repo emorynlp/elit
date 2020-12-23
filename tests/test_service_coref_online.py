@@ -24,21 +24,49 @@ class TestOnlineCoref(unittest.TestCase):
     def setUp(self) -> None:
         super().setUp()
 
+    @classmethod
+    def convert_output_to_context(cls, coref_output):
+        from elit.server.format import OnlineCorefContext
+        if coref_output is None:
+            return None
+        return OnlineCorefContext(
+            input_ids=coref_output.input_ids,
+            sentence_map=coref_output.sentence_map,
+            subtoken_map=coref_output.subtoken_map,
+            mentions=coref_output.mentions,
+            uttr_start_idx=coref_output.uttr_start_idx,
+            speaker_ids=coref_output.speaker_ids
+        )
+
     def test_online_coref(self):
         from elit.server.en import en_services
         from elit.server.format import Input
-        text = 'Pfizer said last week it may need the U.S. government to help it secure some components needed to ' \
-               'make the vaccine. While the company halved its 2020 production target due to manufacturing issues, ' \
-               'it said last week its manufacturing is running smoothly now. The government also has the option to ' \
-               'acquire up to an additional 400 million doses of the vaccine.'
-        inputs = [Input()]
-        for input_doc in inputs:
-            input_doc.text = text[:]
-            input_doc.models = ['ocr']
+        from elit.components.coref.util import flatten
+        utterances = [
+            {'speaker_id': 1, 'text': 'I read an article today. It is about US politics.'},
+            {'speaker_id': 2, 'text': 'What does it say about US politics?'},
+            {'speaker_id': 1, 'text': 'It talks about the US presidential election.'},
+            {'speaker_id': 2, 'text': 'I am interested to hear. Can you elaborate more?'},
+            {'speaker_id': 1, 'text': 'Sure! The presidential election is indeed interesting.'}
+        ]
 
-        docs = en_services.online_coref.predict(inputs)
-        assert len(docs) == len(inputs)
-        print(docs[-1])
+        context = None
+        tokens_to_date = []
+        for turn, uttr in enumerate(utterances):
+            input_doc = Input(text=uttr['text'], speaker_ids=uttr['speaker_id'],
+                              coref_context=self.convert_output_to_context(context), models=['ocr'])
+            output_doc = en_services.online_coref.predict(input_doc, check_sanitization=True)
+            print(output_doc)
+            context = output_doc['ocr']
+
+            # Print cluster text
+            tokens_to_date += flatten(input_doc.tokens)
+            for cluster in output_doc['ocr'].clusters:
+                for i in range(len(cluster)):
+                    m1, m2 = cluster[i]
+                    cluster[i] = (m1, m2, ' '.join(tokens_to_date[m1:m2+1]))
+            print(f'cluster text: {output_doc["ocr"].clusters}')
+            print()
 
 
 if __name__ == '__main__':

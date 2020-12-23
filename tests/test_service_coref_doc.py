@@ -17,6 +17,7 @@
 # -*- coding:utf-8 -*-
 # Author: Liyan Xu
 import unittest
+import time
 
 
 class TestDocCoref(unittest.TestCase):
@@ -31,12 +32,15 @@ class TestDocCoref(unittest.TestCase):
                'make the vaccine. While the company halved its 2020 production target due to manufacturing issues, ' \
                'it said last week its manufacturing is running smoothly now. The government also has the option to ' \
                'acquire up to an additional 400 million doses of the vaccine.'
-        inputs = [Input()] * 32
-        for input_doc in inputs:
-            input_doc.text = text[:]
-            input_doc.models = ['dcr']
 
+        batch_size = 32
+        inputs = [Input(text=text[:], models=['dcr'])] * batch_size
+
+        start_time = time.time()
         docs = en_services.doc_coref.predict(inputs)
+        end_time = time.time()
+        print(f'Doc coref time elapse for {batch_size} small documents: {end_time - start_time :.2f}s')
+
         assert len(docs) == len(inputs)
         print(docs[-1])
 

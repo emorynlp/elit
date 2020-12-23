@@ -21,13 +21,12 @@ from pydantic import BaseModel
 
 
 class OnlineCorefContext(BaseModel):
-    inputs_ids: List[int]
+    input_ids: List[int]
     sentence_map: List[int]
     subtoken_map: List[int]
     mentions: List[Tuple[int, int]]
     uttr_start_idx: List[int]
-    # Optional
-    speaker_ids: List[int] = None
+    speaker_ids: List[int] = None  # Others are required
 
 
 class Input(BaseModel):
