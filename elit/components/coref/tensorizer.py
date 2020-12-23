@@ -21,7 +21,7 @@ import torch
 import logging
 from typing import List, Tuple
 
-from elit.components.coref.io import CorefInput, CorefOutput
+from elit.components.coref.dto import CorefInput, CorefOutput
 
 logger = logging.getLogger(__name__)
 
