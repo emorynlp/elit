@@ -25,26 +25,10 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.logger import logger
 from elit.common.document import Document
-from elit.server.en import en_services
+from elit.server.en import en_services, BundledServices
 from elit.server.format import Input
-from elit.server.service_tokenizer import ServiceTokenizer
-from elit.server.service_parser import ServiceParser
-from elit.server.service_coref import ServiceCoreference
 
 app = FastAPI()
-
-
-class BundledServices:
-    def __init__(self,
-                 tokenizer: ServiceTokenizer = None,
-                 parser: ServiceParser = None,
-                 doc_coref: ServiceCoreference = None,
-                 online_coref: ServiceCoreference = None):
-        self.tokenizer = tokenizer
-        self.parser = parser
-        self.doc_coref = doc_coref
-        self.online_coref = online_coref
-        self.emotion_detection = None
 
 
 class HandlingError(Exception):

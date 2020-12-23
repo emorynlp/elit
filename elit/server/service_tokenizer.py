@@ -16,7 +16,7 @@
 
 # -*- coding:utf-8 -*-
 # Author: hankcs, Liyan Xu
-from typing import List, Callable
+from typing import List, Callable, Union
 
 from elit.server.format import Input
 
@@ -44,7 +44,12 @@ class ServiceTokenizer:
             del tokens[:len(doc)]
         return results
 
-    def tokenize_inputs(self, inputs: List[Input]) -> List[Input]:
+    def tokenize_inputs(self, inputs: Union[Input, List[Input]]) -> Union[Input, List[Input]]:
+        single_input = False
+        if isinstance(inputs, Input):
+            single_input = True
+            inputs = [inputs]
+
         needs_split = []
         input_ids = []
         for i, input in enumerate(inputs):
@@ -63,4 +68,6 @@ class ServiceTokenizer:
         for i, tokens in zip(input_ids, self.tokenize(needs_tokenize)):
             inputs[i].tokens = tokens
 
+        if single_input:
+            return inputs[0]
         return inputs

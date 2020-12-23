@@ -24,7 +24,19 @@ from elit.server.service_tokenizer import ServiceTokenizer
 from elit.server.service_parser import ServiceParser
 from elit.server.service_coref import ServiceCoreference
 from elit.server.en_util import eos, tokenize
-from elit.server.server import BundledServices
+
+
+class BundledServices:
+    def __init__(self,
+                 tokenizer: ServiceTokenizer = None,
+                 parser: ServiceParser = None,
+                 doc_coref: ServiceCoreference = None,
+                 online_coref: ServiceCoreference = None):
+        self.tokenizer = tokenizer
+        self.parser = parser
+        self.doc_coref = doc_coref
+        self.online_coref = online_coref
+        self.emotion_detection = None
 
 
 service_tokenizer = ServiceTokenizer(eos, tokenize)
@@ -36,12 +48,12 @@ service_tokenizer = ServiceTokenizer(eos, tokenize)
 service_parser = None
 
 service_doc_coref = ServiceCoreference(
-    model=elit.load(DOC_COREF_SPANBERT_LARGE_EN),
+    model=elit.load(DOC_COREF_SPANBERT_LARGE_EN, devices=0),
     service_tokenizer=service_tokenizer
 )
 
 service_online_coref = ServiceCoreference(
-    model=elit.load(ONLINE_COREF_SPANBERT_LARGE_EN),
+    model=elit.load(ONLINE_COREF_SPANBERT_LARGE_EN, devices=0),
     service_tokenizer=service_tokenizer
 )
 

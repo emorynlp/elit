@@ -51,7 +51,7 @@ class ServiceCoreference:
             doc_or_uttr=input_doc.tokens,
             speaker_ids=input_doc.speaker_ids,
             genre=input_doc.genre,
-            context=self._translate_context(input_doc.coref_context),
+            context=self._translate_context(input_doc.coref_context) if input_doc.coref_context else None,
             return_prob=input_doc.return_coref_prob,
             language=input_doc.language,
             verbose=True if self.identifier == 'ocr' else input_doc.verbose
