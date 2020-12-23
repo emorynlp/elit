@@ -55,6 +55,8 @@ class CorefInstance:
         """
         Helper method to generate corresponding coreference output.
 
+        For online coreference, verbose will be set to false,
+        since only client side has knowledge about full token text.
         Args:
             tokens (): flattened input original tokens
             verbose (): true to display text in clusters
@@ -63,7 +65,7 @@ class CorefInstance:
         Returns:
 
         """
-        if verbose:
+        if verbose and not online:
             for cluster in self.clusters:
                 for i in range(len(cluster)):
                     m1, m2 = cluster[i]

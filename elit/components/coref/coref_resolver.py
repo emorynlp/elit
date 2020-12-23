@@ -73,8 +73,19 @@ class CoreferenceResolver(TorchComponent):
         self.tensorizer = Tensorizer(self.config)
 
     @property
+    def is_online(self) -> bool:
+        return self.config['online']
+
+    @property
     def available_genres(self) -> List[str]:
         return self.tensorizer.genres
+
+    @property
+    def default_genre(self) -> str:
+        if self.is_online:
+            return 'en' if 'en' in self.available_genres else self.available_genres[0]
+        else:
+            return 'nw' if 'nw' in self.available_genres else self.available_genres[0]
 
     @property
     def speaker_id_range(self) -> Tuple[int, int]:
@@ -93,6 +104,8 @@ class CoreferenceResolver(TorchComponent):
         if coref_input.genre:
             if coref_input.genre not in self.available_genres:
                 return f'genre should be in {self.available_genres}'
+        else:
+            coref_input.genre = self.default_genre
 
         if coref_input.context:
             context = coref_input.context
