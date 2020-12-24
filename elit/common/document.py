@@ -31,6 +31,12 @@ def tree_to_list(T):
     return [T.label(), [tree_to_list(t) if isinstance(t, Tree) else t for t in T]]
 
 
+def list_to_tree(L):
+    if isinstance(L, str):
+        return L
+    return Tree(L[0], [list_to_tree(child) for child in L[1]])
+
+
 class Sentence(SerializableDict):
     KEY_WORDS = 'words'
     KEY_POS = 'pos'
