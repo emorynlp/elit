@@ -140,3 +140,5 @@ If  `verbose` is `false`, the following changes are made:
     ]
 }
 ```
+
+It should be noted that for `ocr`, the cluster mentions are indexed by the global token indices (starting from the beginning of the dialogue) so that it can refer to mentions in the past context. The model itself doesn't know about the sentence id in the past context; it only knows the global token indices upon each input.

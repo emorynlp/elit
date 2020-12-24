@@ -48,7 +48,7 @@ class TestDocCoref(unittest.TestCase):
         print(docs[0])
         print(docs[-1])
 
-    def test_test_doc_coref_concurrent(self):
+    def test_doc_coref_concurrent(self):
         from elit.server.en import en_services
         from elit.server.format import Input
 
@@ -63,6 +63,18 @@ class TestDocCoref(unittest.TestCase):
         assert len(docs) == len(inputs)
         print(docs[0])
         print(docs[-1])
+
+    def test_doc_coref_tokens(self):
+        from elit.server.en import en_services
+        from elit.server.format import Input
+
+        tokens = [
+            ["Emory", "NLP", "is", "a", "research", "lab", "in", "Atlanta", ",", "GA", "."],
+            ["It", "is", "founded", "by", "Jinho", "D.", "Choi", "in", "2014", ".", "Dr.", "Choi", "is", "a",
+             "professor", "at", "Emory", "University", "."]
+        ]
+        input_doc = Input(tokens=tokens, models=['dcr'])
+        print(en_services.doc_coref.predict(input_doc))
 
 
 if __name__ == '__main__':

@@ -51,7 +51,7 @@ class CorefInstance:
         self.mention_to_cluster_id = None
         self.linking_prob = None
 
-    def generate_output(self, tokens: List[str], verbose: bool = True,
+    def generate_output(self, tokens: List[List[str]], verbose: bool = True,
                         online: bool = False) -> Union[CorefOutput, List[List[Tuple[Any]]]]:
         """
         Helper method to generate corresponding coreference output.
@@ -59,7 +59,7 @@ class CorefInstance:
         For online coreference, verbose will be set to false,
         since only client side has knowledge about full token text.
         Args:
-            tokens (): flattened input original tokens
+            tokens (): input original tokens
             verbose (): true to display text in clusters
             online (): true to include context for online coreference
 
@@ -67,6 +67,10 @@ class CorefInstance:
 
         """
         if online:
+            for cluster in self.clusters:
+                for i in range(len(cluster)):
+                    m1, m2 = cluster[i]
+                    cluster[i] = (m1, m2 + 1)
             output = CorefOutput(
                 clusters=self.clusters,
                 input_ids=self.input_ids.tolist(),
@@ -78,11 +82,28 @@ class CorefInstance:
                 linking_prob=self.linking_prob
             )
             return output
+
+        def convert_mention_format(sent_lens, mention):
+            sent_i = 1
+            while sent_i < len(sent_lens) and mention[0] >= sent_lens[sent_i]:
+                sent_i += 1
+            offset = sent_lens[sent_i - 1]
+            converted = (sent_i - 1, mention[0] - offset, mention[1] - offset + 1)
+            return converted
+
+        # Adapt ELIT format
+        sent_lens = [0]
+        for sent in tokens:
+            sent_lens.append(len(sent) + sent_lens[-1])
+        for cluster in self.clusters:
+            for i in range(len(cluster)):
+                cluster[i] = convert_mention_format(sent_lens, cluster[i])
+
         if verbose:
             for cluster in self.clusters:
                 for i in range(len(cluster)):
-                    m1, m2 = cluster[i]
-                    cluster[i] = (m1, m2, ' '.join(tokens[m1:m2+1]))
+                    sent_i, m1, m2 = cluster[i]
+                    cluster[i] = (i, m1, m2, ' '.join(tokens[sent_i][m1:m2]))
         return self.clusters
 
     def __len__(self):
