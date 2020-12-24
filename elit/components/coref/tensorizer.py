@@ -19,7 +19,7 @@
 from transformers import BertTokenizer
 import torch
 import logging
-from typing import List, Tuple
+from typing import List, Tuple, Union, Any
 
 from elit.components.coref.dto import CorefInput, CorefOutput
 
@@ -51,7 +51,8 @@ class CorefInstance:
         self.mention_to_cluster_id = None
         self.linking_prob = None
 
-    def generate_output(self, tokens: List[str], verbose: bool = True, online: bool = False) -> CorefOutput:
+    def generate_output(self, tokens: List[str], verbose: bool = True,
+                        online: bool = False) -> Union[CorefOutput, List[List[Tuple[Any]]]]:
         """
         Helper method to generate corresponding coreference output.
 
@@ -65,11 +66,6 @@ class CorefInstance:
         Returns:
 
         """
-        if verbose and not online:
-            for cluster in self.clusters:
-                for i in range(len(cluster)):
-                    m1, m2 = cluster[i]
-                    cluster[i] = (m1, m2, ' '.join(tokens[m1:m2+1]))
         if online:
             output = CorefOutput(
                 clusters=self.clusters,
@@ -81,9 +77,13 @@ class CorefInstance:
                 mentions=self.mentions,
                 linking_prob=self.linking_prob
             )
-        else:
-            output = CorefOutput(clusters=self.clusters)
-        return output
+            return output
+        if verbose:
+            for cluster in self.clusters:
+                for i in range(len(cluster)):
+                    m1, m2 = cluster[i]
+                    cluster[i] = (m1, m2, ' '.join(tokens[m1:m2+1]))
+        return self.clusters
 
     def __len__(self):
         return 0 if self.input_ids is None else self.input_ids.shape[0]
