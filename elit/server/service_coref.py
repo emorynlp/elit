@@ -18,6 +18,7 @@
 # Author: Liyan Xu
 from typing import List, Callable, Union, Optional
 import asyncio
+import random
 
 from elit.components.coref.dto import CorefInput, CorefOutput
 from elit.server.service_tokenizer import ServiceTokenizer
@@ -25,15 +26,33 @@ from elit.server.format import Input, OnlineCorefContext
 from elit.server.en_util import eos, tokenize
 from elit.common.document import Document
 
+CorefCallable = Callable[[CorefInput], CorefOutput]
+
 
 class ServiceCoreference:
 
     def __init__(self,
-                 model: Callable[[CorefInput], CorefOutput],
-                 service_tokenizer: ServiceTokenizer) -> None:
-        self.model = model
+                 service_tokenizer: ServiceTokenizer,
+                 models: Union[CorefCallable, List[CorefCallable]]) -> None:
+        """
+        Service for coreference resolution that supports async concurrent prediction on multi-GPUs.
+
+        Models should either all be doc coref or all be online coref.
+        Args:
+            service_tokenizer ():
+            models (): if more than one models, they should be placed on separate GPUs
+        """
         self.service_tokenizer = ServiceTokenizer(eos, tokenize) if service_tokenizer is None else service_tokenizer
-        self.identifier = 'ocr' if self.model.config['online'] else 'dcr'
+        if not isinstance(models, list):
+            models = [models]
+        self.models = models
+
+        is_online = self.models[0].config['online']
+        assert all(model.config['online'] == is_online for model in self.models), 'models should be of same type'
+
+    @property
+    def identifier(self) -> str:
+        return 'ocr' if self.models[0].config['online'] else 'dcr'
 
     def _translate_context(self, context: OnlineCorefContext) -> CorefOutput:
         return CorefOutput(
@@ -67,37 +86,50 @@ class ServiceCoreference:
                 self.identifier: coref_output
             })
 
-    def _predict_single(self, coref_input: Optional[CorefInput], **kwargs) -> Optional[CorefOutput]:
+    def _predict_single(self, coref_input: Optional[CorefInput], model: CorefCallable,
+                        **kwargs) -> Optional[CorefOutput]:
         if coref_input is None:
             return None
-        return self.model(coref_input, **kwargs)
-
-    async def _predict_single_async(self, coref_input: Optional[CorefInput], **kwargs) -> Optional[CorefOutput]:
-        return self._predict_single(coref_input, **kwargs)
+        return model(coref_input, **kwargs)
 
     def predict_sequentially(self, inputs: Union[Input, List[Input]], **kwargs) -> Union[Document, List[Document]]:
-        """ Sequential prediction on multiple input docs. """
-        self.service_tokenizer.tokenize_inputs(inputs)  # no effects (read-only) in server pipeline
-
+        """ Sequential prediction on multiple input docs; randomly pick a single model. """
+        single_input = False
         if isinstance(inputs, Input):
-            return self._translate_from_coref(self._predict_single(self._translate_to_coref(inputs), **kwargs), inputs)
+            single_input = True
+            inputs = [inputs]
+
+        self.service_tokenizer.tokenize_inputs(inputs)  # no effects (read-only) in server pipeline
+        model = random.choice(self.models)
 
         coref_inputs = [self._translate_to_coref(input_doc) for input_doc in inputs]
-        output_docs = [self._translate_from_coref(self._predict_single(coref_input, **kwargs), inputs[i])
+        output_docs = [self._translate_from_coref(self._predict_single(coref_input, model, **kwargs), inputs[i])
                        for i, coref_input in enumerate(coref_inputs)]
-        return output_docs
 
-    async def predict(self, inputs: Union[Input, List[Input]], **kwargs) -> Union[Document, List[Document]]:
-        """ Concurrent prediction on multiple input docs. """
-        self.service_tokenizer.tokenize_inputs(inputs)  # no effects (read-only) in server pipeline
+        return output_docs[0] if single_input else output_docs
 
+    async def _predict_single_routine(self, coref_input: Optional[CorefInput], model: CorefCallable,
+                                      **kwargs) -> Optional[CorefOutput]:
+        return self._predict_single(coref_input, model, **kwargs)
+
+    async def _predict_routine(self, inputs: Union[Input, List[Input]], **kwargs) -> Union[Document, List[Document]]:
+        single_input = False
         if isinstance(inputs, Input):
-            return self._translate_from_coref(self._predict_single(self._translate_to_coref(inputs), **kwargs), inputs)
+            single_input = True
+            inputs = [inputs]
+
+        self.service_tokenizer.tokenize_inputs(inputs)  # no effects (read-only) in server pipeline
+        model_picks = random.choices(self.models, k=len(inputs))
 
         coref_inputs = [self._translate_to_coref(input_doc) for input_doc in inputs]
-
-        coref_outputs = asyncio.gather(*[self._predict_single_async(coref_input) for coref_input in coref_inputs])
+        coref_outputs = asyncio.gather(*[self._predict_single_routine(coref_input, model, **kwargs)
+                                         for coref_input, model in zip(coref_inputs, model_picks)])
 
         output_docs = [self._translate_from_coref(coref_output, inputs[i])
                        for i, coref_output in enumerate(await coref_outputs)]
+        return output_docs[0] if single_input else output_docs
+
+    def predict(self, inputs: Union[Input, List[Input]], **kwargs) -> Union[Document, List[Document]]:
+        """ Concurrent prediction on multiple input docs; randomly distribute on all models. """
+        output_docs = asyncio.run(self._predict_routine(inputs, **kwargs))
         return output_docs
