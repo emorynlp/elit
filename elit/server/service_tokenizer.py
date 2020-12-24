@@ -68,6 +68,4 @@ class ServiceTokenizer:
         for i, tokens in zip(input_ids, self.tokenize(needs_tokenize)):
             inputs[i].tokens = tokens
 
-        if single_input:
-            return inputs[0]
-        return inputs
+        return inputs[0] if single_input else inputs

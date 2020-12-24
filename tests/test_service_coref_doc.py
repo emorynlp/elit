@@ -18,7 +18,6 @@
 # Author: Liyan Xu
 import unittest
 import time
-import asyncio
 
 
 class TestDocCoref(unittest.TestCase):
@@ -37,7 +36,7 @@ class TestDocCoref(unittest.TestCase):
         from elit.server.en import en_services
         from elit.server.format import Input
 
-        batch_size = 2
+        batch_size = 128
         inputs = [Input(text=self.get_sample_text(), models=['dcr'])] * batch_size
 
         start_time = time.time()
@@ -49,19 +48,15 @@ class TestDocCoref(unittest.TestCase):
         print(docs[0])
         print(docs[-1])
 
-    async def routine_test_doc_coref_concurrent(self, inputs):
-        from elit.server.en import en_services
-        docs = await en_services.doc_coref.predict(inputs)
-        return docs
-
     def test_test_doc_coref_concurrent(self):
+        from elit.server.en import en_services
         from elit.server.format import Input
 
-        batch_size = 2
+        batch_size = 128
         inputs = [Input(text=self.get_sample_text(), models=['dcr'])] * batch_size
 
         start_time = time.time()
-        docs = asyncio.run(self.routine_test_doc_coref_concurrent(inputs))
+        docs = en_services.doc_coref.predict(inputs)
         end_time = time.time()
         print(f'Concurrent doc coref time elapse for {batch_size} small documents: {end_time - start_time :.2f}s')
 

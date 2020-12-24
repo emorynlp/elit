@@ -13,11 +13,11 @@ from elit.server.en_util import eos, tokenize
 class ServiceParser(object):
 
     def __init__(self,
-                 model: Callable[[List[List[str]], List[str]], Document],
-                 service_tokenizer: ServiceTokenizer) -> None:
+                 service_tokenizer: ServiceTokenizer,
+                 model: Callable[[List[List[str]], List[str]], Document]) -> None:
         super().__init__()
-        self.model = model
         self.service_tokenizer = ServiceTokenizer(eos, tokenize) if service_tokenizer is None else service_tokenizer
+        self.model = model
 
     def parse_sents(self, sents: List[List[str]], tasks: List[str] = None) -> Document:
         return self.model(sents, tasks=tasks)
