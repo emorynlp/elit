@@ -43,6 +43,7 @@ class MlCorefModel(nn.Module):
         self.num_genres = len(config['genres'])
         self.max_seg_len = config['max_segment_len']
         self.max_span_width = config['max_span_width']
+        config['top_span_ratio'] = 0.3
 
         # Model
         self.dropout = nn.Dropout(p=config['dropout_rate'])

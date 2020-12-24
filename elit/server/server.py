@@ -81,9 +81,18 @@ class ModelRunner(object):
         return our_task["output"]
 
     def run_model(self, batch: List[Input]) -> List[Any]:  # runs in other thread
+        # After tokenization, we could run parsing and coreference concurrently
+        # However, current coref is throttled by mention extraction on CPU
+        # Therefore, concurrent execution doesn't help performance because of GIL
         try:
             batch = self.services.tokenizer.tokenize_inputs(batch)
-            return self.services.parser.parse(batch)
+            docs = self.services.parser.parse(batch)
+            docs_coref_doc = self.services.doc_coref.predict(batch, return_tokens=False)
+            docs_coref_online = self.services.online_coref.predict(batch, return_tokens=False)
+            for doc, doc_coref_doc, doc_coref_online in zip(docs, docs_coref_doc, docs_coref_online):
+                doc.update(doc_coref_doc)
+                doc.update(doc_coref_online)
+            return docs
         except Exception as e:
             traceback.print_exc()
             return [e for _ in batch]
