@@ -55,7 +55,7 @@ class TestOnlineCoref(unittest.TestCase):
         for turn, uttr in enumerate(utterances):
             input_doc = Input(text=uttr['text'], speaker_ids=uttr['speaker_id'],
                               coref_context=self.convert_output_to_context(context), models=['ocr'])
-            output_doc = en_services.online_coref.predict(input_doc, check_sanitization=True)
+            output_doc = en_services.online_coref.predict_sequentially(input_doc, check_sanitization=True)
             print(output_doc)
             context = output_doc['ocr']
 
