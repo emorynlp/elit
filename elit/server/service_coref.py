@@ -38,6 +38,8 @@ class ServiceCoreference:
         Service for coreference resolution that supports async concurrent prediction on multi-GPUs.
 
         Models should either all be doc coref or all be online coref.
+        The performance of the current model implementation is completely throttled by the mention extraction on CPU,
+        therefore multi-GPUs do not help directly.
         Args:
             service_tokenizer ():
             models (): if more than one models, they should be placed on separate GPUs
@@ -77,14 +79,17 @@ class ServiceCoreference:
             verbose=True if self.identifier == 'ocr' else input_doc.verbose
         )
 
-    def _translate_from_coref(self, coref_output: Optional[CorefOutput], input_doc: Input) -> Document:
+    def _translate_from_coref(self, coref_output: Optional[CorefOutput], input_doc: Input,
+                              return_tokens: bool = True) -> Document:
         if coref_output is None:
             return Document({'tokens': input_doc.tokens})
-        else:
+        elif return_tokens:
             return Document({
                 'tokens': input_doc.tokens,
                 self.identifier: coref_output
             })
+        else:
+            return Document({self.identifier: coref_output})
 
     def _predict_single(self, coref_input: Optional[CorefInput], model: CorefCallable,
                         **kwargs) -> Optional[CorefOutput]:
@@ -94,6 +99,7 @@ class ServiceCoreference:
 
     def predict_sequentially(self, inputs: Union[Input, List[Input]], **kwargs) -> Union[Document, List[Document]]:
         """ Sequential prediction on multiple input docs; randomly pick a single model. """
+        return_tokens = kwargs.get('return_tokens', True)
         single_input = False
         if isinstance(inputs, Input):
             single_input = True
@@ -103,8 +109,8 @@ class ServiceCoreference:
         model = random.choice(self.models)
 
         coref_inputs = [self._translate_to_coref(input_doc) for input_doc in inputs]
-        output_docs = [self._translate_from_coref(self._predict_single(coref_input, model, **kwargs), inputs[i])
-                       for i, coref_input in enumerate(coref_inputs)]
+        output_docs = [self._translate_from_coref(self._predict_single(coref_input, model, **kwargs), inputs[i],
+                                                  return_tokens) for i, coref_input in enumerate(coref_inputs)]
 
         return output_docs[0] if single_input else output_docs
 
@@ -113,6 +119,7 @@ class ServiceCoreference:
         return self._predict_single(coref_input, model, **kwargs)
 
     async def _predict_routine(self, inputs: Union[Input, List[Input]], **kwargs) -> Union[Document, List[Document]]:
+        return_tokens = kwargs.get('return_tokens', True)
         single_input = False
         if isinstance(inputs, Input):
             single_input = True
@@ -125,7 +132,7 @@ class ServiceCoreference:
         coref_outputs = asyncio.gather(*[self._predict_single_routine(coref_input, model, **kwargs)
                                          for coref_input, model in zip(coref_inputs, model_picks)])
 
-        output_docs = [self._translate_from_coref(coref_output, inputs[i])
+        output_docs = [self._translate_from_coref(coref_output, inputs[i], return_tokens)
                        for i, coref_output in enumerate(await coref_outputs)]
         return output_docs[0] if single_input else output_docs
 

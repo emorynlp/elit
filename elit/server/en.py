@@ -41,24 +41,21 @@ class BundledServices:
 
 service_tokenizer = ServiceTokenizer(eos, tokenize)
 
-# service_parser = ServiceParser(
-#     service_tokenizer=service_tokenizer,
-#     model=elit.load(LEM_POS_NER_DEP_SDP_CON_AMR_ROBERTA_BASE_EN)
-# )
-service_parser = None
+service_parser = ServiceParser(
+    service_tokenizer=service_tokenizer,
+    model=elit.load(LEM_POS_NER_DEP_SDP_CON_AMR_ROBERTA_BASE_EN)
+)
+# service_parser = None
 
+service_doc_coref = ServiceCoreference(
+    service_tokenizer=service_tokenizer,
+    models=elit.load(DOC_COREF_SPANBERT_LARGE_EN, devices=0)
+)
 # service_doc_coref = ServiceCoreference(
 #     service_tokenizer=service_tokenizer,
 #     models=[elit.load(DOC_COREF_SPANBERT_LARGE_EN, devices=0),
-#             elit.load(DOC_COREF_SPANBERT_LARGE_EN, devices=0),
-#             elit.load(DOC_COREF_SPANBERT_LARGE_EN, devices=0),
-#             elit.load(DOC_COREF_SPANBERT_LARGE_EN, devices=0)]
+#             elit.load(DOC_COREF_SPANBERT_LARGE_EN, devices=1)]
 # )
-service_doc_coref = ServiceCoreference(
-    service_tokenizer=service_tokenizer,
-    models=[elit.load(DOC_COREF_SPANBERT_LARGE_EN, devices=0),
-            elit.load(DOC_COREF_SPANBERT_LARGE_EN, devices=0)]
-)
 
 service_online_coref = ServiceCoreference(
     service_tokenizer=service_tokenizer,
@@ -85,6 +82,7 @@ def main():
         print(doc)
 
     # Try doc coref; for more tests see test_service_coref_doc.py
+    # Try online coref: see test_service_coref_online.py
     text = 'Pfizer said last week it may need the U.S. government to help it secure some components needed to ' \
            'make the vaccine. While the company halved its 2020 production target due to manufacturing issues, ' \
            'it said last week its manufacturing is running smoothly now. The government also has the option to ' \
@@ -92,8 +90,6 @@ def main():
     input_doc = Input(text=text, models=['dcr'])
     doc = service_doc_coref.predict(input_doc)
     print(doc)
-
-    # Try online coref: see test_service_coref_online.py
 
 
 if __name__ == '__main__':
