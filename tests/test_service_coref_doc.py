@@ -18,6 +18,7 @@
 # Author: Liyan Xu
 import unittest
 import time
+import asyncio
 
 
 class TestDocCoref(unittest.TestCase):
@@ -25,23 +26,47 @@ class TestDocCoref(unittest.TestCase):
     def setUp(self) -> None:
         super().setUp()
 
-    def test_doc_coref(self):
-        from elit.server.en import en_services
-        from elit.server.format import Input
+    def get_sample_text(self):
         text = 'Pfizer said last week it may need the U.S. government to help it secure some components needed to ' \
                'make the vaccine. While the company halved its 2020 production target due to manufacturing issues, ' \
                'it said last week its manufacturing is running smoothly now. The government also has the option to ' \
                'acquire up to an additional 400 million doses of the vaccine.'
+        return text
 
-        batch_size = 32
-        inputs = [Input(text=text[:], models=['dcr'])] * batch_size
+    def test_doc_coref_sequential(self):
+        from elit.server.en import en_services
+        from elit.server.format import Input
+
+        batch_size = 2
+        inputs = [Input(text=self.get_sample_text(), models=['dcr'])] * batch_size
 
         start_time = time.time()
-        docs = en_services.doc_coref.predict(inputs)
+        docs = en_services.doc_coref.predict_sequentially(inputs)
         end_time = time.time()
-        print(f'Doc coref time elapse for {batch_size} small documents: {end_time - start_time :.2f}s')
+        print(f'Sequential doc coref time elapse for {batch_size} small documents: {end_time - start_time :.2f}s')
 
         assert len(docs) == len(inputs)
+        print(docs[0])
+        print(docs[-1])
+
+    async def routine_test_doc_coref_concurrent(self, inputs):
+        from elit.server.en import en_services
+        docs = await en_services.doc_coref.predict(inputs)
+        return docs
+
+    def test_test_doc_coref_concurrent(self):
+        from elit.server.format import Input
+
+        batch_size = 2
+        inputs = [Input(text=self.get_sample_text(), models=['dcr'])] * batch_size
+
+        start_time = time.time()
+        docs = asyncio.run(self.routine_test_doc_coref_concurrent(inputs))
+        end_time = time.time()
+        print(f'Concurrent doc coref time elapse for {batch_size} small documents: {end_time - start_time :.2f}s')
+
+        assert len(docs) == len(inputs)
+        print(docs[0])
         print(docs[-1])
 
 

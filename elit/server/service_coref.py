@@ -17,6 +17,7 @@
 # -*- coding:utf-8 -*-
 # Author: Liyan Xu
 from typing import List, Callable, Union, Optional
+import asyncio
 
 from elit.components.coref.dto import CorefInput, CorefOutput
 from elit.server.service_tokenizer import ServiceTokenizer
@@ -71,7 +72,10 @@ class ServiceCoreference:
             return None
         return self.model(coref_input, **kwargs)
 
-    def predict(self, inputs: Union[Input, List[Input]], **kwargs) -> Union[Document, List[Document]]:
+    async def _predict_single_async(self, coref_input: Optional[CorefInput], **kwargs) -> Optional[CorefOutput]:
+        return self._predict_single(coref_input, **kwargs)
+
+    def predict_sequentially(self, inputs: Union[Input, List[Input]], **kwargs) -> Union[Document, List[Document]]:
         """ Sequential prediction on multiple input docs. """
         self.service_tokenizer.tokenize_inputs(inputs)  # no effects (read-only) in server pipeline
 
@@ -81,4 +85,19 @@ class ServiceCoreference:
         coref_inputs = [self._translate_to_coref(input_doc) for input_doc in inputs]
         output_docs = [self._translate_from_coref(self._predict_single(coref_input, **kwargs), inputs[i])
                        for i, coref_input in enumerate(coref_inputs)]
+        return output_docs
+
+    async def predict(self, inputs: Union[Input, List[Input]], **kwargs) -> Union[Document, List[Document]]:
+        """ Concurrent prediction on multiple input docs. """
+        self.service_tokenizer.tokenize_inputs(inputs)  # no effects (read-only) in server pipeline
+
+        if isinstance(inputs, Input):
+            return self._translate_from_coref(self._predict_single(self._translate_to_coref(inputs), **kwargs), inputs)
+
+        coref_inputs = [self._translate_to_coref(input_doc) for input_doc in inputs]
+
+        coref_outputs = asyncio.gather(*[self._predict_single_async(coref_input) for coref_input in coref_inputs])
+
+        output_docs = [self._translate_from_coref(coref_output, inputs[i])
+                       for i, coref_output in enumerate(await coref_outputs)]
         return output_docs

@@ -76,7 +76,7 @@ def main():
     for doc in docs:
         print(doc)
 
-    # Try doc coref; for more tests see test_service_coref_doc/online
+    # Try doc coref; for more tests see test_service_coref_doc.py
     text = 'Pfizer said last week it may need the U.S. government to help it secure some components needed to ' \
            'make the vaccine. While the company halved its 2020 production target due to manufacturing issues, ' \
            'it said last week its manufacturing is running smoothly now. The government also has the option to ' \
@@ -84,6 +84,8 @@ def main():
     input_doc = Input(text=text, models=['dcr'])
     doc = service_doc_coref.predict(input_doc)
     print(doc)
+
+    # Try online coref: see test_service_coref_online.py
 
 
 if __name__ == '__main__':
