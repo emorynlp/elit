@@ -13,11 +13,11 @@ install:
 #  on:
 #    python: 3.7
 #    branch: main
+env:
+  - ELIT_VERBOSE=0
 script:
   - python tests/test_joint_model.py
   - python tests/test_service_coref_doc.py
   - python test_service_coref_online.py
 notifications:
   email: false
-env:
-  - ELIT_VERBOSE=0
