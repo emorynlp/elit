@@ -18,6 +18,10 @@
 # Author: Liyan Xu
 import unittest
 
+from elit.server.en import en_services
+from elit.server.format import Input, OnlineCorefContext
+from elit.components.coref.util import flatten
+
 
 class TestOnlineCoref(unittest.TestCase):
 
@@ -26,7 +30,6 @@ class TestOnlineCoref(unittest.TestCase):
 
     @classmethod
     def convert_output_to_context(cls, coref_output):
-        from elit.server.format import OnlineCorefContext
         if coref_output is None:
             return None
         return OnlineCorefContext(
@@ -39,22 +42,24 @@ class TestOnlineCoref(unittest.TestCase):
         )
 
     def test_online_coref(self):
-        from elit.server.en import en_services
-        from elit.server.format import Input
-        from elit.components.coref.util import flatten
+        # Test text, sents, tokens input
         utterances = [
             {'speaker_id': 1, 'text': 'I read an article today. It is about US politics.'},
-            {'speaker_id': 2, 'text': 'What does it say about US politics?'},
+            {'speaker_id': 2, 'tokens': [['What', 'does', 'it', 'say', 'about', 'US', 'politics', '?']]},  # Tokens
             {'speaker_id': 1, 'text': 'It talks about the US presidential election.'},
-            {'speaker_id': 2, 'text': 'I am interested to hear. Can you elaborate more?'},
+            {'speaker_id': 2, 'text': ['I am interested to hear.', 'Can you elaborate more?']},  # Sents
             {'speaker_id': 1, 'text': 'Sure! The presidential election is indeed interesting.'}
         ]
 
         context = None
         tokens_to_date = []
         for turn, uttr in enumerate(utterances):
-            input_doc = Input(text=uttr['text'], speaker_ids=uttr['speaker_id'],
-                              coref_context=self.convert_output_to_context(context), models=['ocr'])
+            if 'tokens' in uttr:
+                input_doc = Input(tokens=uttr['tokens'], speaker_ids=uttr['speaker_id'],
+                                  coref_context=self.convert_output_to_context(context), models=['ocr'])
+            else:
+                input_doc = Input(text=uttr['text'], speaker_ids=uttr['speaker_id'],
+                                  coref_context=self.convert_output_to_context(context), models=['ocr'])
             output_doc = en_services.online_coref.predict_sequentially(input_doc, check_sanitization=True)
             print(output_doc)
             context = output_doc['ocr']

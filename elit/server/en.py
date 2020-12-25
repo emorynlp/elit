@@ -49,7 +49,8 @@ service_parser = ServiceParser(
 
 service_doc_coref = ServiceCoreference(
     service_tokenizer=service_tokenizer,
-    models=elit.load(DOC_COREF_SPANBERT_LARGE_EN, devices=0)
+    models=elit.load(DOC_COREF_SPANBERT_LARGE_EN)
+    # models = elit.load(DOC_COREF_SPANBERT_LARGE_EN, devices=0)
 )
 # service_doc_coref = ServiceCoreference(
 #     service_tokenizer=service_tokenizer,
@@ -59,7 +60,7 @@ service_doc_coref = ServiceCoreference(
 
 service_online_coref = ServiceCoreference(
     service_tokenizer=service_tokenizer,
-    models=elit.load(ONLINE_COREF_SPANBERT_LARGE_EN, devices=0)
+    models=elit.load(ONLINE_COREF_SPANBERT_LARGE_EN)
 )
 
 en_services = BundledServices(

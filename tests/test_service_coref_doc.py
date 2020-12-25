@@ -19,6 +19,9 @@
 import unittest
 import time
 
+from elit.server.en import en_services
+from elit.server.format import Input
+
 
 class TestDocCoref(unittest.TestCase):
 
@@ -33,10 +36,8 @@ class TestDocCoref(unittest.TestCase):
         return text
 
     def test_doc_coref_sequential(self):
-        from elit.server.en import en_services
-        from elit.server.format import Input
 
-        batch_size = 128
+        batch_size = 32
         inputs = [Input(text=self.get_sample_text(), models=['dcr'])] * batch_size
 
         start_time = time.time()
@@ -49,10 +50,8 @@ class TestDocCoref(unittest.TestCase):
         print(docs[-1])
 
     def test_doc_coref_concurrent(self):
-        from elit.server.en import en_services
-        from elit.server.format import Input
 
-        batch_size = 128
+        batch_size = 32
         inputs = [Input(text=self.get_sample_text(), models=['dcr'])] * batch_size
 
         start_time = time.time()
@@ -64,10 +63,20 @@ class TestDocCoref(unittest.TestCase):
         print(docs[0])
         print(docs[-1])
 
-    def test_doc_coref_tokens(self):
-        from elit.server.en import en_services
-        from elit.server.format import Input
+    def test_doc_coref_text(self):
+        text = "Emory NLP is a research lab in Atlanta, GA. "
+        "It is founded by Jinho D. Choi in 2014. Dr. Choi is a professor at Emory University."
+        input_doc = Input(text=text, models=['dcr'])
+        print(en_services.doc_coref.predict(input_doc))
 
+    def test_doc_coref_sents(self):
+        text = ["Emory NLP is a research lab in Atlanta, GA.",
+                "It is founded by Jinho D. Choi in 2014.",
+                'Dr. Choi is a professor at Emory University.']
+        input_doc = Input(text=text, models=['dcr'])
+        print(en_services.doc_coref.predict(input_doc))
+
+    def test_doc_coref_tokens(self):
         tokens = [
             ["Emory", "NLP", "is", "a", "research", "lab", "in", "Atlanta", ",", "GA", "."],
             ["It", "is", "founded", "by", "Jinho", "D.", "Choi", "in", "2014", ".", "Dr.", "Choi", "is", "a",
