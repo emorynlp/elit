@@ -408,7 +408,7 @@ def get_resource(path: str, save_dir=None, extract=True, prefix=ELIT_URL, append
         else:
             path = realpath
     if extract and compressed:
-        path = uncompress(path, verbose)
+        path = uncompress(path, verbose=verbose)
         if anchor:
             path = path_join(path, anchor)
 
