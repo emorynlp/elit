@@ -19,8 +19,9 @@ class TestJointModel(unittest.TestCase):
         print(doc)
 
     def test_sents_input(self):
-        text = ["Emory NLP is a research lab in Atlanta, GA. ",
-                "It is founded by Jinho D. Choi in 2014. Dr. Choi is a professor at Emory University."]
+        text = ["Emory NLP is a research lab in Atlanta, GA.",
+                "It is founded by Jinho D. Choi in 2014.",
+                'Dr. Choi is a professor at Emory University.']
 
         doc = en.parse([Input(text=text)])[0]
         print(doc)
@@ -28,8 +29,8 @@ class TestJointModel(unittest.TestCase):
     def test_tokens_input(self):
         tokens = [
             ["Emory", "NLP", "is", "a", "research", "lab", "in", "Atlanta", ",", "GA", "."],
-            ["It", "is", "founded", "by", "Jinho", "D.", "Choi", "in", "2014", ".", "Dr.", "Choi", "is", "a",
-             "professor", "at", "Emory", "University", "."]
+            ["It", "is", "founded", "by", "Jinho", "D.", "Choi", "in", "2014", "."],
+            ["Dr.", "Choi", "is", "a", "professor", "at", "Emory", "University", "."]
         ]
         doc = en.parse([Input(tokens=tokens)])[0]
         print(doc)
