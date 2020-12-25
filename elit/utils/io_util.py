@@ -193,7 +193,10 @@ def parent_dir(path):
     return os.path.normpath(os.path.join(path, os.pardir))
 
 
-def download(url, save_path=None, save_dir=elit_home(), prefix=ELIT_URL, append_location=True, verbose=True):
+def download(url, save_path=None, save_dir=elit_home(), prefix=ELIT_URL, append_location=True, verbose=None):
+    if verbose is None:
+        verbose = os.environ.get('ELIT_VERBOSE', '1')
+        verbose = verbose.lower() in '1', 'true', 'yes'
     if not save_path:
         save_path = path_from_url(url, save_dir, prefix, append_location)
     if os.path.isfile(save_path):
@@ -225,10 +228,11 @@ def download(url, save_path=None, save_dir=elit_home(), prefix=ELIT_URL, append_
                 eta = duration / ratio * (1 - ratio)
                 speed = human_bytes(speed)
                 progress_size = human_bytes(progress_size)
-                sys.stderr.write("\r%.2f%%, %s/%s, %s/s, ETA %s      " %
-                                 (percent, progress_size, human_bytes(total_size), speed,
-                                  time_util.report_time_delta(eta)))
-                sys.stderr.flush()
+                if verbose:
+                    sys.stderr.write("\r%.2f%%, %s/%s, %s/s, ETA %s      " %
+                                     (percent, progress_size, human_bytes(total_size), speed,
+                                      time_util.report_time_delta(eta)))
+                    sys.stderr.flush()
 
             import socket
             socket.setdefaulttimeout(10)
