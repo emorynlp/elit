@@ -228,7 +228,7 @@ def download(url, save_path=None, save_dir=elit_home(), prefix=ELIT_URL, append_
                 eta = duration / ratio * (1 - ratio)
                 speed = human_bytes(speed)
                 progress_size = human_bytes(progress_size)
-                if verbose:
+                # if verbose:
                     # sys.stderr.write("\r%.2f%%, %s/%s, %s/s, ETA %s      " %
                     #                  (percent, progress_size, human_bytes(total_size), speed,
                     #                   time_util.report_time_delta(eta)))
