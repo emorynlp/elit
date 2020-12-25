@@ -193,7 +193,10 @@ def parent_dir(path):
     return os.path.normpath(os.path.join(path, os.pardir))
 
 
-def download(url, save_path=None, save_dir=elit_home(), prefix=ELIT_URL, append_location=True, verbose=True):
+def download(url, save_path=None, save_dir=elit_home(), prefix=ELIT_URL, append_location=True, verbose=None):
+    if verbose is None:
+        verbose = os.environ.get('ELIT_VERBOSE', '1')
+        verbose = verbose.lower() in ('1', 'true', 'yes')
     if not save_path:
         save_path = path_from_url(url, save_dir, prefix, append_location)
     if os.path.isfile(save_path):
@@ -225,10 +228,11 @@ def download(url, save_path=None, save_dir=elit_home(), prefix=ELIT_URL, append_
                 eta = duration / ratio * (1 - ratio)
                 speed = human_bytes(speed)
                 progress_size = human_bytes(progress_size)
-                sys.stderr.write("\r%.2f%%, %s/%s, %s/s, ETA %s      " %
-                                 (percent, progress_size, human_bytes(total_size), speed,
-                                  time_util.report_time_delta(eta)))
-                sys.stderr.flush()
+                if verbose:
+                    sys.stderr.write("\r%.2f%%, %s/%s, %s/s, ETA %s      " %
+                                     (percent, progress_size, human_bytes(total_size), speed,
+                                      time_util.report_time_delta(eta)))
+                    sys.stderr.flush()
 
             import socket
             socket.setdefaulttimeout(10)
@@ -265,7 +269,7 @@ def parse_url_path(url):
     return parsed.netloc, path
 
 
-def uncompress(path, dest=None, remove=True):
+def uncompress(path, dest=None, remove=True, verbose=True):
     """uncompress a file
 
     Args:
@@ -305,7 +309,8 @@ def uncompress(path, dest=None, remove=True):
                     else:
                         root_of_folder = None
                         dest = prefix  # assume zip contains more than one files or folders
-                eprint('Extracting {} to {}'.format(path, dest))
+                if verbose:
+                    eprint('Extracting {} to {}'.format(path, dest))
                 archive.extractall(dest)
                 if root_of_folder:
                     if root_of_folder != folder_name:
@@ -338,7 +343,7 @@ def split_if_compressed(path: str, compressed_ext=('.zip', '.tgz', '.gz', 'bz2',
     return path, None
 
 
-def get_resource(path: str, save_dir=None, extract=True, prefix=ELIT_URL, append_location=True, verbose=True):
+def get_resource(path: str, save_dir=None, extract=True, prefix=ELIT_URL, append_location=True, verbose=None):
     """Fetch real path for a resource (model, corpus, whatever)
 
     Args:
@@ -357,6 +362,9 @@ def get_resource(path: str, save_dir=None, extract=True, prefix=ELIT_URL, append
     path = elit.pretrained.ALL.get(path, path)
     anchor: str = None
     compressed = None
+    if verbose is None:
+        verbose = os.environ.get('ELIT_VERBOSE', '1')
+        verbose = verbose.lower() in ('1', 'true', 'yes')
     if os.path.isdir(path):
         return path
     elif os.path.isfile(path):
@@ -400,7 +408,7 @@ def get_resource(path: str, save_dir=None, extract=True, prefix=ELIT_URL, append
         else:
             path = realpath
     if extract and compressed:
-        path = uncompress(path)
+        path = uncompress(path, verbose)
         if anchor:
             path = path_join(path, anchor)
 
