@@ -16,7 +16,7 @@ install:
 env:
   - ELIT_VERBOSE=0
 script:
-  - python tests/test_joint_model.py
+  # - python tests/test_joint_model.py
   - python tests/test_service_coref_doc.py
   - python tests/test_service_coref_online.py
 notifications:

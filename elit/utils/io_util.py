@@ -195,7 +195,6 @@ def parent_dir(path):
 
 def download(url, save_path=None, save_dir=elit_home(), prefix=ELIT_URL, append_location=True, verbose=None):
     if verbose is None:
-        verbose = os.environ.get('ELIT_VERBOSE', '0')
         verbose = verbose.lower() in '1', 'true', 'yes'
     if not save_path:
         save_path = path_from_url(url, save_dir, prefix, append_location)
