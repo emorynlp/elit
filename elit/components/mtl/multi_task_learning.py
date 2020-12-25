@@ -454,12 +454,15 @@ class MultiTaskLearning(TorchComponent):
             else:
                 target_topological_order = defaultdict(set)
                 for task_name in target_tasks:
+                    if task_name not in computation_graph:
+                        continue
                     for dependency in topological_sort(computation_graph, task_name):
                         target_topological_order[task_topological_order[dependency]].add(dependency)
                 target_tasks = [item[1] for item in sorted(target_topological_order.items())]
         else:
             target_tasks = [set(tasks)] if isinstance(tasks, list) else [{tasks}]
-        assert target_tasks, f'No task to perform due to `tasks = {tasks}`.'
+        if not target_tasks:
+            return Document()
         # Sort target tasks within the same group in a defined order
         target_tasks = [sorted(x, key=lambda _x: self.config.task_names.index(_x)) for x in target_tasks]
         flatten_target_tasks = [self.tasks[t] for group in target_tasks for t in group]
