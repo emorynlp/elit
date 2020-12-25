@@ -15,30 +15,12 @@
 # ========================================================================
 
 # -*- coding:utf-8 -*-
-# Author: hankcs, Liyan Xu
-from typing import Union, List, Tuple
-from pydantic import BaseModel
+# Author: Liyan Xu
+from elit.common.constant import ELIT_URL
 
+DOC_COREF_SPANBERT_BASE_EN = ELIT_URL + 'doc_coref_spanbert_base_20201222.zip'
+DOC_COREF_SPANBERT_LARGE_EN = ELIT_URL + 'doc_coref_spanbert_large_20201222.zip'
+ONLINE_COREF_SPANBERT_BASE_EN = ELIT_URL + 'online_coref_spanbert_base_20201222.zip'
+ONLINE_COREF_SPANBERT_LARGE_EN = ELIT_URL + 'online_coref_spanbert_large_20201222.zip'
 
-class OnlineCorefContext(BaseModel):
-    input_ids: List[int]
-    sentence_map: List[int]
-    subtoken_map: List[int]
-    mentions: List[Tuple[int, int]]
-    uttr_start_idx: List[int]
-    speaker_ids: List[int] = None  # Others are required
-
-
-class Input(BaseModel):
-    text: Union[str, List[str]] = None
-    tokens: List[List[str]] = None
-    models: List[str] = ["lem", "pos", "ner", "con", "dep", "srl", "amr", "dcr", "ocr"]
-
-    # For coref
-    speaker_ids: Union[int, List[int]] = None
-    genre: str = None
-    coref_context: OnlineCorefContext = None
-    return_coref_prob: bool = False
-
-    language: str = 'en'
-    verbose: bool = True
+ALL = {}

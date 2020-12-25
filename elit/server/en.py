@@ -1,35 +1,73 @@
+# ========================================================================
+# Copyright 2020 Emory University
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========================================================================
+
 # -*- coding:utf-8 -*-
-# Author: hankcs
-# Date: 2020-12-13 20:21
-from typing import List
-
+# Author: hankcs, Liyan Xu
 import elit
-from elit.components.tokenizer import EnglishTokenizer
 from elit.pretrained.mtl import LEM_POS_NER_DEP_SDP_CON_AMR_ROBERTA_BASE_EN
+from elit.pretrained.coref import DOC_COREF_SPANBERT_LARGE_EN, ONLINE_COREF_SPANBERT_LARGE_EN
 from elit.server.format import Input
-from elit.server.service import Service
-
-tokenizer = EnglishTokenizer()
-
-
-def eos(text: List[str]) -> List[List[str]]:
-    results = []
-    for doc in text:
-        tokens = tokenizer.tokenize(doc)
-        sents = tokenizer.segment(tokens)
-        results.append(['\t'.join(x) for x in sents])
-    return results
+from elit.server.service_tokenizer import ServiceTokenizer
+from elit.server.service_parser import ServiceParser
+from elit.server.service_coref import ServiceCoreference
+from elit.server.en_util import eos, tokenize
 
 
-def tokenize(sents: List[str]) -> List[List[str]]:
-    return [tokenizer.tokenize(x) for x in sents]
+class BundledServices:
+    def __init__(self,
+                 tokenizer: ServiceTokenizer = None,
+                 parser: ServiceParser = None,
+                 doc_coref: ServiceCoreference = None,
+                 online_coref: ServiceCoreference = None):
+        self.tokenizer = tokenizer
+        self.parser = parser
+        self.doc_coref = doc_coref
+        self.online_coref = online_coref
+        self.emotion_detection = None
 
 
-model = elit.load(LEM_POS_NER_DEP_SDP_CON_AMR_ROBERTA_BASE_EN)
-en = Service(
-    model,
-    eos,
-    tokenize
+service_tokenizer = ServiceTokenizer(eos, tokenize)
+
+service_parser = ServiceParser(
+    service_tokenizer=service_tokenizer,
+    model=elit.load(LEM_POS_NER_DEP_SDP_CON_AMR_ROBERTA_BASE_EN)
+)
+# service_parser = None
+
+service_doc_coref = ServiceCoreference(
+    service_tokenizer=service_tokenizer,
+    models=elit.load(DOC_COREF_SPANBERT_LARGE_EN)
+    # models = elit.load(DOC_COREF_SPANBERT_LARGE_EN, devices=0)
+)
+# service_doc_coref = ServiceCoreference(
+#     service_tokenizer=service_tokenizer,
+#     models=[elit.load(DOC_COREF_SPANBERT_LARGE_EN, devices=0),
+#             elit.load(DOC_COREF_SPANBERT_LARGE_EN, devices=1)]
+# )
+
+service_online_coref = ServiceCoreference(
+    service_tokenizer=service_tokenizer,
+    models=elit.load(ONLINE_COREF_SPANBERT_LARGE_EN)
+)
+
+en_services = BundledServices(
+    tokenizer=service_tokenizer,
+    parser=service_parser,
+    doc_coref=service_doc_coref,
+    online_coref=service_online_coref
 )
 
 
@@ -40,9 +78,18 @@ def main():
     ]
     input = Input(text=text)
     input.models = ['lem']
-    docs = en.parse([input])
+    docs = en_services.parser.parse([input])
     for doc in docs:
         print(doc)
+
+    # See elit.client for coreference examples
+    text = 'Pfizer said last week it may need the U.S. government to help it secure some components needed to ' \
+           'make the vaccine. While the company halved its 2020 production target due to manufacturing issues, ' \
+           'it said last week its manufacturing is running smoothly now. The government also has the option to ' \
+           'acquire up to an additional 400 million doses of the vaccine.'
+    input_doc = Input(text=text, models=['dcr'])
+    doc = service_doc_coref.predict(input_doc)
+    print(doc)
 
 
 if __name__ == '__main__':

@@ -44,7 +44,7 @@ The input JSON also needs to include the `models` and `language` fields.
 ```json
 {
     "text": "Emory NLP is a research lab in Atlanta, GA. It is founded by Jinho D. Choi in 2014. Dr. Choi is a professor at Emory University.",
-    "models": ["lem", "pos", "ner", "con", "dep", "srl", "amr", "coref"],
+    "models": ["lem", "pos", "ner", "con", "dep", "srl", "amr", "dcr", "ocr"],
     "language": "en",
     "verbose": true
 }
@@ -52,6 +52,9 @@ The input JSON also needs to include the `models` and `language` fields.
 
 * `verbose`: if true, the output includes the word forms of all spans.
 
+For coreference resolution models, `dcr` resolves the traditional document coreference, and `ocr` resolves the online coreference for dialogues. The following fields can also be included for `dcr` or `ocr`: `speaker_ids`, `genre`, `coref_context`, `return_coref_prob` (see [format.py](elit/server/format.py)). 
+
+In addition, `coref_context` is required for `ocr` with 1+ turns. It can be obtained from the online output of the previous utterance. See [client.py](elit/client.py) for examples.
 
 ## Output Format
 
@@ -104,7 +107,7 @@ The input JSON also needs to include the `models` and `language` fields.
         [["c0", "ARG0", "c2"], ["c4", "ARG0", "c2"], ["c0", "ARG1", "c1"], ["c4", "ARG2", "c5"], ["c6", "domain", "c5"], ["c7", "domain", "c5"], ["c0", "instance", "found-01"], ["c1", "instance", "it"], ["c2", "instance", "person"], ["c4", "instance", "have-org-role-91"], ["c5", "instance", "officer"], ["c6", "instance", "executive"], ["c7", "instance", "chief"], ["c0", "time", "2014@attr3@"]],
         [["c0", "ARG0", "c2"], ["c0", "ARG1", "c1"], ["c0", "ARG1", "c3"], ["c0", "ARG1", "c4"], ["c0", "instance", "have-org-role-91"], ["c1", "instance", "professor"], ["c2", "instance", "doctor"], ["c3", "instance", "doctor"], ["c4", "instance", "university"], ["c5", "instance", "emory"], ["c4", "name", "c5"]]
     ],
-    "coref": [
+    "dcr": [
         [[0, 0, 2, "Emory NLP"], [1, 0, 1, "It"]],
         [[1, 4, 7, "Jinho D. Choi"], [2, 0, 2, "Dr. Choi"]]
     ]
@@ -131,9 +134,11 @@ If  `verbose` is `false`, the following changes are made:
             [[2, 3, "PRED"], [0, 2, "ARG1"], [3, 5, "ARG2"], [5, 8, "PRED"]]
         ]
     ],
-    "coref": [
+    "dcr": [
         [[0, 0, 2], [1, 0, 1]],
         [[1, 4, 7], [2, 0, 2]]
     ]
 }
 ```
+
+It should be noted that for `ocr`, the cluster mentions are indexed by the global token indices (starting from the beginning of the dialogue) so that it can refer to mentions in the past context. The model itself doesn't know about the sentence id in the past context; it only knows the global token indices upon each input.

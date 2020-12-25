@@ -1,6 +1,21 @@
+# ========================================================================
+# Copyright 2020 Emory University
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# ========================================================================
+
 # -*- coding:utf-8 -*-
-# Author: hankcs
-# Date: 2020-12-13 19:02
+# Author: hankcs, Liyan Xu
 import asyncio
 import functools
 import traceback
@@ -10,9 +25,8 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.logger import logger
 from elit.common.document import Document
-from elit.server.en import en
+from elit.server.en import en_services, BundledServices
 from elit.server.format import Input
-from elit.server.service import Service
 
 app = FastAPI()
 
@@ -25,7 +39,7 @@ class HandlingError(Exception):
 
 
 class ModelRunner(object):
-    def __init__(self, service: Service, max_queue_size=128, max_batch_size=32, max_wait=0.05):
+    def __init__(self, services: BundledServices, max_queue_size=128, max_batch_size=32, max_wait=0.05):
         """
 
         Args:
@@ -33,7 +47,7 @@ class ModelRunner(object):
             max_batch_size: we put at most MAX_BATCH_SIZE things in a single batch
             max_wait: we wait at most MAX_WAIT seconds before running for more inputs to arrive in batching
         """
-        self.service = service
+        self.services = services
         self.max_wait = max_wait
         self.max_batch_size = max_batch_size
         self.max_queue_size = max_queue_size
@@ -67,8 +81,18 @@ class ModelRunner(object):
         return our_task["output"]
 
     def run_model(self, batch: List[Input]) -> List[Any]:  # runs in other thread
+        # After tokenization, we could run parsing and coreference concurrently
+        # However, current coref is throttled by mention extraction on CPU
+        # Therefore, concurrent execution doesn't help performance because of GIL
         try:
-            return self.service.parse(batch)
+            batch = self.services.tokenizer.tokenize_inputs(batch)
+            docs = self.services.parser.parse(batch)
+            docs_coref_doc = self.services.doc_coref.predict(batch, return_tokens=False)
+            docs_coref_online = self.services.online_coref.predict(batch, return_tokens=False)
+            for doc, doc_coref_doc, doc_coref_online in zip(docs, docs_coref_doc, docs_coref_online):
+                doc.update(doc_coref_doc)
+                doc.update(doc_coref_online)
+            return docs
         except Exception as e:
             traceback.print_exc()
             return [e for _ in batch]
@@ -112,7 +136,7 @@ async def startup_event():
     asyncio.create_task(runner.model_runner())
 
 
-runner = ModelRunner(en)
+runner = ModelRunner(en_services)
 
 
 # noinspection PyShadowingBuiltins
