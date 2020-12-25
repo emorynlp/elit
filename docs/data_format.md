@@ -82,9 +82,9 @@ In addition, `coref_context` is required for `ocr` with 1+ turns. It can be obta
         [[0, 2, "PERSON", "Dr. Choi"], [6, 8, "ORG", "Emory University"]]
     ],
     "con": [
-        [],
-        [],
-        []
+        ["TOP", [["S", [["NP", [["NNP", ["Emory"]], ["NNP", ["NLP"]]]], ["VP", [["VBZ", ["is"]], ["NP", [["NP", [["DT", ["a"]], ["NN", ["research"]], ["NN", ["lab"]]]], ["PP", [["IN", ["in"]], ["NP", [["NP", [["NNP", ["Atlanta"]]]], [",", [","]], ["NP", [["NNP", ["GA"]]]]]]]]]]]], [".", ["."]]]]]],
+        ["TOP", [["S", [["NP", [["PRP", ["It"]]]], ["VP", [["VBZ", ["is"]], ["VP", [["VBN", ["founded"]], ["PP", [["IN", ["by"]], ["NP", [["NNP", ["Jinho"]], ["NNP", ["D."]], ["NNP", ["Choi"]]]]]], ["PP", [["IN", ["in"]], ["NP", [["CD", ["2014"]]]]]]]]]], [".", ["."]]]]]],
+        ["TOP", [["S", [["NP", [["NNP", ["Dr."]], ["NNP", ["Choi"]]]], ["VP", [["VBZ", ["is"]], ["NP", [["NP", [["DT", ["a"]], ["NN", ["professor"]]]], ["PP", [["IN", ["at"]], ["NP", [["NNP", ["Emory"]], ["NNP", ["University"]]]]]]]]]], [".", ["."]]]]]]
     ],
     "dep": [
         [[1, "com"], [5, "nsbj"], [5, "cop"], [5, "det"], [5, "com"], [-1, "root"], [7, "case"], [5, "ppmod"], [7, "p"], [7, "appo"], [5, "p"]],
@@ -103,9 +103,9 @@ In addition, `coref_context` is required for `ocr` with 1+ turns. It can be obta
         ]
     ],
     "amr": [
-        [],
-        [],
-        []
+        [["c0", "ARG1", "c1"], ["c0", "ARG2", "c2"], ["c6", "domain", "c2"], ["c0", "instance", "have-mod-91"], ["c1", "instance", "name"], ["c2", "instance", "lab"], ["c5", "instance", "city"], ["c6", "instance", "research-01"], ["c7", "instance", "state"], ["c2", "location", "c5"], ["c5", "location", "c7"], ["c1", "op1", "\"emory\"@attr3@"], ["c1", "op2", "\"atlanta\"@attr4@"]],
+        [["c0", "ARG0", "c2"], ["c4", "ARG0", "c2"], ["c0", "ARG1", "c1"], ["c4", "ARG2", "c5"], ["c6", "domain", "c5"], ["c7", "domain", "c5"], ["c0", "instance", "found-01"], ["c1", "instance", "it"], ["c2", "instance", "person"], ["c4", "instance", "have-org-role-91"], ["c5", "instance", "officer"], ["c6", "instance", "executive"], ["c7", "instance", "chief"], ["c0", "time", "2014@attr3@"]],
+        [["c0", "ARG0", "c2"], ["c0", "ARG1", "c1"], ["c0", "ARG1", "c3"], ["c0", "ARG1", "c4"], ["c0", "instance", "have-org-role-91"], ["c1", "instance", "professor"], ["c2", "instance", "doctor"], ["c3", "instance", "doctor"], ["c4", "instance", "university"], ["c5", "instance", "emory"], ["c4", "name", "c5"]]
     ],
     "dcr": [
         [[0, 0, 2, "Emory NLP"], [1, 0, 1, "It"]],
