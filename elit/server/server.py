@@ -82,8 +82,8 @@ class ModelRunner(object):
 
     def run_model(self, batch: List[Input]) -> List[Any]:  # runs in other thread
         # After tokenization, we could run parsing and coreference concurrently
-        # However, current coref is throttled by mention extraction on CPU
-        # Therefore, concurrent execution doesn't help performance because of GIL
+        # However, since GIL restricts only one process, the bottleneck is on CPU;
+        # concurrent execution doesn't increase throughput in this case
         try:
             batch = self.services.tokenizer.tokenize_inputs(batch)
             docs = self.services.parser.parse(batch)

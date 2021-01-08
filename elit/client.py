@@ -16,7 +16,7 @@ class Client(object):
 
     @classmethod
     def create_coref_context_from_online_output(cls, coref_output: dict) -> Optional[dict]:
-        """ Feed context (previous online output) to online coreference with 1+ turns """
+        """ Create context (from previous online output) to online coreference input with 1+ turns """
         if coref_output is None:
             return None
         return {k: coref_output[k] for k in cls.coref_context_keys}

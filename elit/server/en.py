@@ -45,12 +45,10 @@ service_parser = ServiceParser(
     service_tokenizer=service_tokenizer,
     model=elit.load(LEM_POS_NER_DEP_SDP_CON_AMR_ROBERTA_BASE_EN)
 )
-# service_parser = None
 
 service_doc_coref = ServiceCoreference(
     service_tokenizer=service_tokenizer,
     models=elit.load(DOC_COREF_SPANBERT_LARGE_EN)
-    # models = elit.load(DOC_COREF_SPANBERT_LARGE_EN, devices=0)
 )
 # service_doc_coref = ServiceCoreference(
 #     service_tokenizer=service_tokenizer,
