@@ -24,10 +24,10 @@ def main():
     args = arg_parser.parse_args()
 
     if args.task == 'parse':
-        from elit.server.en import en
+        from elit.server.en_parser import service_parser
         for line in sys.stdin:
             line = line.strip()
-            doc = en.parse([Input(text=line)])[0]
+            doc = service_parser.parse([Input(text=line)])[0]
             print(doc)
     elif args.task == 'serve':
         from elit.server import server

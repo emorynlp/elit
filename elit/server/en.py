@@ -17,13 +17,12 @@
 # -*- coding:utf-8 -*-
 # Author: hankcs, Liyan Xu
 import elit
-from elit.pretrained.mtl import LEM_POS_NER_DEP_SDP_CON_AMR_ROBERTA_BASE_EN
 from elit.pretrained.coref import DOC_COREF_SPANBERT_LARGE_EN, ONLINE_COREF_SPANBERT_LARGE_EN
+from elit.server.en_parser import service_tokenizer, service_parser
 from elit.server.format import Input
 from elit.server.service_tokenizer import ServiceTokenizer
 from elit.server.service_parser import ServiceParser
 from elit.server.service_coref import ServiceCoreference
-from elit.server.en_util import eos, tokenize
 
 
 class BundledServices:
@@ -38,13 +37,6 @@ class BundledServices:
         self.online_coref = online_coref
         self.emotion_detection = None
 
-
-service_tokenizer = ServiceTokenizer(eos, tokenize)
-
-service_parser = ServiceParser(
-    service_tokenizer=service_tokenizer,
-    model=elit.load(LEM_POS_NER_DEP_SDP_CON_AMR_ROBERTA_BASE_EN)
-)
 
 service_doc_coref = ServiceCoreference(
     service_tokenizer=service_tokenizer,
