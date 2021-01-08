@@ -52,9 +52,9 @@ The input JSON also needs to include the `models` and `language` fields.
 
 * `verbose`: if true, the output includes the word forms of all spans.
 
-For coreference resolution models, `dcr` resolves the traditional document coreference, and `ocr` resolves the online coreference for dialogues. The following fields can also be included for `dcr` or `ocr`: `speaker_ids`, `genre`, `coref_context`, `return_coref_prob` (see [format.py](elit/server/format.py)). 
+For coreference resolution models, `dcr` resolves the traditional document coreference, and `ocr` resolves the online coreference for dialogues. The following fields can also be included for `dcr` or `ocr`: `speaker_ids`, `genre`, `coref_context`, `return_coref_prob` (see [format.py](https://github.com/emorynlp/elit/blob/main/elit/server/format.py)). 
 
-In addition, `coref_context` is required for `ocr` with 1+ turns. It can be obtained from the online output of the previous utterance. See [client.py](elit/client.py) for examples.
+In addition, `coref_context` is required for `ocr` with 1+ turns. It can be obtained from the online output of the previous utterance. See [ocr documentation](data_format_ocr.md) for data format regarding `ocr` and see  [client.py](https://github.com/emorynlp/elit/blob/main/elit/client.py) for code examples.
 
 ## Output Format
 
@@ -141,4 +141,4 @@ If  `verbose` is `false`, the following changes are made:
 }
 ```
 
-It should be noted that for `ocr`, the cluster mentions are indexed by the global token indices (starting from the beginning of the dialogue) so that it can refer to mentions in the past context. The model itself doesn't know about the sentence id in the past context; it only knows the global token indices upon each input.
+See [ocr documentation](data_format_ocr.md) for output format regarding `ocr`.
