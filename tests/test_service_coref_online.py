@@ -17,6 +17,7 @@
 # -*- coding:utf-8 -*-
 # Author: Liyan Xu
 import unittest
+import json
 
 from elit.server.en import en_services
 from elit.server.format import Input, OnlineCorefContext
@@ -33,22 +34,27 @@ class TestOnlineCoref(unittest.TestCase):
         if coref_output is None:
             return None
         return OnlineCorefContext(
-            input_ids=coref_output.input_ids,
-            sentence_map=coref_output.sentence_map,
-            subtoken_map=coref_output.subtoken_map,
-            mentions=coref_output.mentions,
-            uttr_start_idx=coref_output.uttr_start_idx,
-            speaker_ids=coref_output.speaker_ids
+            input_ids=coref_output['input_ids'],
+            sentence_map=coref_output['sentence_map'],
+            subtoken_map=coref_output['subtoken_map'],
+            mentions=[tuple(m) for m in coref_output['mentions']],
+            uttr_start_idx=coref_output['uttr_start_idx'],
+            speaker_ids=coref_output['speaker_ids']
         )
 
     def test_online_coref(self):
         # Test text, sents, tokens input
+        # utterances = [
+        #     {'speaker_id': 1, 'text': 'I read an article today. It is about US politics.'},
+        #     {'speaker_id': 2, 'tokens': [['What', 'does', 'it', 'say', 'about', 'US', 'politics', '?']]},  # Tokens
+        #     {'speaker_id': 1, 'text': 'It talks about the US presidential election.'},
+        #     {'speaker_id': 2, 'text': ['I am interested to hear.', 'Can you elaborate more?']},  # Sents
+        #     {'speaker_id': 1, 'text': 'Sure! The presidential election is indeed interesting.'}
+        # ]
+
         utterances = [
-            {'speaker_id': 1, 'text': 'I read an article today. It is about US politics.'},
-            {'speaker_id': 2, 'tokens': [['What', 'does', 'it', 'say', 'about', 'US', 'politics', '?']]},  # Tokens
-            {'speaker_id': 1, 'text': 'It talks about the US presidential election.'},
-            {'speaker_id': 2, 'text': ['I am interested to hear.', 'Can you elaborate more?']},  # Sents
-            {'speaker_id': 1, 'text': 'Sure! The presidential election is indeed interesting.'}
+            {'speaker_id': 1, 'tokens': [['I', 'read', 'an', 'article', 'today', '.']]},
+            {'speaker_id': 2, 'tokens': [['Can', 'you', 'tell', 'me', 'what', 'it', 'is', 'about', '?']]}
         ]
 
         context = None
@@ -61,16 +67,16 @@ class TestOnlineCoref(unittest.TestCase):
                 input_doc = Input(text=uttr['text'], speaker_ids=uttr['speaker_id'],
                                   coref_context=self.convert_output_to_context(context), models=['ocr'])
             output_doc = en_services.online_coref.predict_sequentially(input_doc, check_sanitization=True)
-            print(output_doc)
+            print(json.dumps(output_doc))
             context = output_doc['ocr']
 
             # Print cluster text
             tokens_to_date += flatten(input_doc.tokens)
-            for cluster in output_doc['ocr'].clusters:
+            for cluster in output_doc['ocr']['clusters']:
                 for i in range(len(cluster)):
-                    m1, m2 = cluster[i]
-                    cluster[i] = (m1, m2, ' '.join(tokens_to_date[m1:m2+1]))
-            print(f'cluster text: {output_doc["ocr"].clusters}')
+                    m1, m2 = tuple(cluster[i])
+                    cluster[i] = (m1, m2, ' '.join(tokens_to_date[m1:m2]))
+            print(f'cluster text: {output_doc["ocr"]["clusters"]}')
             print()
 
 

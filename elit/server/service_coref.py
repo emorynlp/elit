@@ -16,7 +16,7 @@
 
 # -*- coding:utf-8 -*-
 # Author: Liyan Xu
-from typing import List, Callable, Union, Optional
+from typing import List, Callable, Union, Optional, Any, Tuple
 import asyncio
 import random
 
@@ -76,20 +76,20 @@ class ServiceCoreference:
             context=self._translate_context(input_doc.coref_context) if input_doc.coref_context else None,
             return_prob=input_doc.return_coref_prob,
             language=input_doc.language,
-            verbose=True if self.identifier == 'ocr' else input_doc.verbose
+            verbose=False if self.identifier == 'ocr' else input_doc.verbose
         )
 
-    def _translate_from_coref(self, coref_output: Optional[CorefOutput], input_doc: Input,
-                              return_tokens: bool = True) -> Document:
+    def _translate_from_coref(self, coref_output: Optional[Union[CorefOutput, List[List[Tuple[Any]]]]],
+                              input_doc: Input, return_tokens: bool = True) -> Document:
         if coref_output is None:
             return Document({'tokens': input_doc.tokens})
         elif return_tokens:
             return Document({
                 'tokens': input_doc.tokens,
-                self.identifier: coref_output
+                self.identifier: vars(coref_output) if self.identifier == 'ocr' else coref_output
             })
         else:
-            return Document({self.identifier: coref_output})
+            return Document({self.identifier: vars(coref_output) if self.identifier == 'ocr' else coref_output})
 
     def _predict_single(self, coref_input: Optional[CorefInput], model: CorefCallable,
                         **kwargs) -> Optional[CorefOutput]:

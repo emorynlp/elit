@@ -17,7 +17,7 @@
 # -*- coding:utf-8 -*-
 # Author: Liyan Xu
 import logging
-from typing import Union, List, Callable, Dict, Tuple, Optional
+from typing import Union, List, Callable, Dict, Tuple, Optional, Any
 import torch
 from torch.utils.data import DataLoader
 from collections import defaultdict
@@ -141,7 +141,7 @@ class CoreferenceResolver(TorchComponent):
             output = self._predict_doc(data)
         return output
 
-    def _predict_doc(self, data: CorefInput) -> CorefOutput:
+    def _predict_doc(self, data: CorefInput) -> Union[CorefOutput, List[List[Tuple[Any]]]]:
         inst: CorefInstance = self.tensorizer.encode_online(data)
         inputs = {
             'input_ids': inst.input_ids.unsqueeze(0),
@@ -162,7 +162,7 @@ class CoreferenceResolver(TorchComponent):
         return output
 
     def _predict_online(self, data: CorefInput, allow_singleton: bool = True,
-                        check_sanitization: bool = False) -> CorefOutput:
+                        check_sanitization: bool = False) -> Union[CorefOutput, List[List[Tuple[Any]]]]:
         if self.config['mention_loss_coef'] < 1e-6:
             allow_singleton = False
 
