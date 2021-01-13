@@ -28,9 +28,10 @@ def eos(text: List[str]) -> List[List[str]]:
     for doc in text:
         tokens = tokenizer.tokenize(doc)
         sents = tokenizer.segment(tokens)
-        results.append(['\t'.join(x) for x in sents])
+        results.append(['\0'.join(x) for x in sents])
     return results
 
 
 def tokenize(sents: List[str]) -> List[List[str]]:
-    return [tokenizer.tokenize(x) for x in sents]
+    # Since text from user seldom contains \0, so we use \0 to indicate a pre-tokenized sentence
+    return [x.split('\0') if '\0' in x else tokenizer.tokenize(x) for x in sents]
