@@ -55,7 +55,7 @@ $ elit serve
 $ curl http://0.0.0.0:8000/parse?text=Emory%20NLP%20is%20a%20research%20lab%20in%20Atlanta. | json_pp -json_opt pretty,canonical
 ```
 
-You can also post json request to the server with fine-grained control specified in [Data Format](data_format.md). We also offer a client which implments ELIT protocol.
+You can also post json request to the server with fine-grained control specified in [Data Format](data_format.md). We also offer a client which implements ELIT protocol.
 
 ```python
 from elit.client import Client
@@ -84,3 +84,22 @@ def _test_tokens():
     print(nlp.parse(tokens=tokens, models=['ner', 'srl', 'dep'], verbose=True))
 ```
 
+#### GPUs
+
+By default, ELIT tries to use the least occupied GPU so that mostly you don't need to worry about it, ELIT makes the best choice for you. This behavior is very useful when you're using a public server shared across your lab or company with your colleagues. 
+
+ELIT also honors the ``CUDA_VISIBLE_DEVICES`` used by PyTorch and TensorFlow to limit which devices ELIT can choose from. For example, the following command will only keep the `0`th and `1`th GPU.
+
+```bash
+export CUDA_VISIBLE_DEVICES=0,1
+```
+
+#### Multi-Processing
+
+ELIT server implements 1) request batching and 2) asynchronous coroutine and 3) multi-processing to scale up its
+computation. 
+The number of processes is default to be 1 and you can adjust it according to your hardware, say `4` processes:
+
+```
+elit serve --workers 4
+```
