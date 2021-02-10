@@ -63,7 +63,7 @@ setup(
         'transformers',
         'scipy'
     ],
-    python_requires='>=3.7',
+    python_requires='>=3.6',
     entry_points={
         'console_scripts': [
             'elit=elit.main:main',
