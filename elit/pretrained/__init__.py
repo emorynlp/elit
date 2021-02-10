@@ -17,6 +17,7 @@
 # -*- coding:utf-8 -*-
 # Author: hankcs
 from elit.pretrained import mtl
+from elit.pretrained import coref
 
 # Will be filled up during runtime
 ALL = {}
