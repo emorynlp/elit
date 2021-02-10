@@ -9,6 +9,9 @@ cd elit
 pip install -e .
 ```
 
+`conda` will install a relatively new version of Python which meets ELIT's requirement. If you are not using conda, 
+make sure Python >= 3.7.
+
 ## CLI
 
 ### Interactive 
