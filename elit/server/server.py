@@ -27,6 +27,10 @@ from fastapi.logger import logger
 from elit.common.document import Document
 from elit.server.en import en_services, BundledServices
 from elit.server.format import Input
+import sys
+
+if sys.version_info[:2] < (3, 7):
+    raise NotImplementedError('Server requires Python 3.7 or later.')
 
 app = FastAPI()
 
