@@ -34,8 +34,10 @@ def tree_to_list(T):
 def list_to_tree(L):
     if isinstance(L, str):
         return L
-    while len(L) == 1 and isinstance(L, list):
+    while len(L) == 1:
         L = L[0]
+        if isinstance(L, str):
+            return L
     return Tree(L[0], [list_to_tree(child) for child in L[1]])
 
 
