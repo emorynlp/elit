@@ -27,9 +27,11 @@ from elit.common.transform import VocabDict
 from elit.components.mtl.tasks import Task
 from elit.components.parsers.biaffine.biaffine_2nd_dep import BiaffineSecondaryParser, BiaffineJointDecoder, \
     BiaffineSeparateDecoder
+from elit.components.parsers.conll import CoNLLSentence, CoNLLUWord
 from elit.layers.scalar_mix import ScalarMixWithDropoutBuilder
 from elit.metrics.metric import Metric
 from elit.metrics.mtl import MetricDict
+from elit.utils.time_util import CountdownTimer
 from elit.utils.util import merge_locals_kwargs
 from alnlp.modules import util
 
@@ -78,6 +80,12 @@ class BiaffineSecondaryDependencyParsing(Task, BiaffineSecondaryParser):
             dataset.purge_cache()
         if self.vocabs.mutable:
             BiaffineSecondaryParser.build_vocabs(self, dataset, logger, transformer=True)
+        max_seq_len = self.config.get('max_seq_len', None)
+        if max_seq_len and isinstance(data, str):
+            dataset.prune(lambda x: len(x['token_input_ids']) > 510, logger)
+        if dataset.cache:
+            timer = CountdownTimer(len(dataset))
+            BiaffineSecondaryDependencyParsing.cache_dataset(self, dataset, timer, training, logger)
         return PadSequenceDataLoader(
             batch_sampler=self.sampler_builder.build(self.compute_lens(data, dataset), shuffle=training,
                                                      gradient_accumulation=gradient_accumulation),
@@ -92,9 +100,10 @@ class BiaffineSecondaryDependencyParsing(Task, BiaffineSecondaryParser):
         BiaffineSecondaryParser.update_metric(self, *prediction, batch['arc'], batch['rel_id'], output[1],
                                               batch['punct_mask'], metric, batch)
 
-    def decode_output(self, output: Dict[str, Any], batch: Dict[str, Any], decoder, **kwargs) \
-            -> Union[Dict[str, Any], Any]:
-        return BiaffineSecondaryParser.decode(self, *output[0], output[1], batch)
+    def decode_output(self, output: Union[torch.Tensor, Dict[str, torch.Tensor], Iterable[torch.Tensor], Any],
+                      mask: torch.BoolTensor, batch: Dict[str, Any], decoder: torch.nn.Module, **kwargs) -> Union[
+        Dict[str, Any], Any]:
+        return BiaffineSecondaryParser.decode(self, *output[0], output[1], batch=batch)
 
     def compute_loss(self, batch: Dict[str, Any],
                      output: Union[torch.Tensor, Dict[str, torch.Tensor], Iterable[torch.Tensor], Any], criterion) -> \
@@ -124,4 +133,15 @@ class BiaffineSecondaryDependencyParsing(Task, BiaffineSecondaryParser):
 
     def prediction_to_result(self, prediction: Dict[str, Any], batch: Dict[str, Any]) -> List:
         outputs = []
-        return BiaffineSecondaryParser.predictions_to_human(self, prediction, outputs, batch['token'], use_pos=False)
+        BiaffineSecondaryParser.predictions_to_human(self, prediction, outputs, batch['token'], use_pos=False)
+        for sent in outputs:
+            head_rel_pairs_per_sent = []
+            sent: CoNLLSentence = sent
+            for word in sent:
+                head_rel_pairs_per_word = []
+                word: CoNLLUWord = word
+                head_rel_pairs_per_word.append((word.head, word.deprel))
+                if word.deps:
+                    head_rel_pairs_per_word += word.deps
+                head_rel_pairs_per_sent.append(head_rel_pairs_per_word)
+            yield head_rel_pairs_per_sent

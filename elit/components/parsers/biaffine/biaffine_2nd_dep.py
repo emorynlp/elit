@@ -214,15 +214,17 @@ class BiaffineSecondaryParser(BiaffineDependencyParser):
 
     def predictions_to_human(self, predictions, outputs, data, use_pos):
         rel_vocab = self.vocabs['rel'].idx_to_token
-        for d, graph in zip(data, predictions):
+        (arc_1st, arc_2ed), (rel_1st, rel_2ed) = predictions
+        for d, a1s, a2s, r1s, r2s in zip(data, arc_1st[:, 1:].tolist(), arc_2ed[:, 1:].tolist(),
+                                         rel_1st[:, 1:].tolist(), rel_2ed[:, 1:].tolist()):
             sent = CoNLLSentence()
-            for idx, (cell, hrs) in enumerate(zip(d, graph)):
+            for idx, (cell, a1, a2, r1, r2) in enumerate(zip(d[1:], a1s, a2s, r1s, r2s)):
                 if use_pos:
                     token, pos = cell
                 else:
                     token, pos = cell, None
-                head = hrs[0][0]
-                deprel = rel_vocab[hrs[0][1]]
-                deps = [(h, rel_vocab[r]) for h, r in hrs[1:]]
+                head = a1
+                deprel = rel_vocab[r1]
+                deps = [(i, rel_vocab[r]) for i, (h, r) in enumerate(zip(a2, r2)) if h and i != head]
                 sent.append(CoNLLUWord(idx + 1, token, upos=pos, head=head, deprel=deprel, deps=deps))
             outputs.append(sent)
