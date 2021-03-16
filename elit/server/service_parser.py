@@ -45,9 +45,6 @@ class ServiceParser(object):
                     for _v in v:
                         for j, s in enumerate(_v):
                             _v[j] = [x[1:] + x[:1] for x in s]
-                elif k == 'dep':
-                    for j, s in enumerate(v):
-                        v[j] = [(x[0] - 1, x[1]) for x in s]
             for i, input in zip(input_ids, group_inputs):
                 for k, v in annotations.items():
                     results[i][k] = v[:len(input.tokens)]

@@ -143,5 +143,6 @@ class BiaffineSecondaryDependencyParsing(Task, BiaffineSecondaryParser):
                 head_rel_pairs_per_word.append((word.head, word.deprel))
                 if word.deps:
                     head_rel_pairs_per_word += word.deps
+                head_rel_pairs_per_word = [(x[0] - 1, x[1]) for x in head_rel_pairs_per_word]
                 head_rel_pairs_per_sent.append(head_rel_pairs_per_word)
             yield head_rel_pairs_per_sent

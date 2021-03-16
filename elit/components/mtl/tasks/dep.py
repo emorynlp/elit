@@ -146,4 +146,5 @@ class BiaffineDependencyParsing(Task, BiaffineDependencyParser):
             tokens = tokens[1:]
             sent_len = len(tokens)
             result = list(zip(arcs_per_sent[:sent_len], [vocab[r] for r in rels_per_sent[:sent_len]]))
+            result = [(x[0] - 1, x[1]) for x in result]
             yield result
