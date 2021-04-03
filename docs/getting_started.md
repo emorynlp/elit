@@ -106,3 +106,12 @@ The number of processes is default to be 1 and you can adjust it according to yo
 ```
 elit serve --workers 4
 ```
+
+#### Models
+
+You can use `--parser_model` to specify a model identifier for the parsers. It defaults to `LEM_POS_NER_DEP_SDP_CON_AMR_ROBERTA_BASE_EN` at this point. To use the secondary dependency parser, run the following command:
+
+```bash
+elit parse --parser_model LEM_POS_NER_DEP_ROBERTA_BASE_EN
+```
+
