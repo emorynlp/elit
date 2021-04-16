@@ -103,7 +103,7 @@ class CorefInstance:
             for cluster in self.clusters:
                 for i in range(len(cluster)):
                     sent_i, m1, m2 = cluster[i]
-                    cluster[i] = (i, m1, m2, ' '.join(tokens[sent_i][m1:m2]))
+                    cluster[i] = (sent_i, m1, m2, ' '.join(tokens[sent_i][m1:m2]))
         return self.clusters
 
     def __len__(self):
