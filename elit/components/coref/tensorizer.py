@@ -20,6 +20,7 @@ from transformers import BertTokenizer
 import torch
 import logging
 from typing import List, Tuple, Union, Any
+import elit.components.coref.util as util
 
 from elit.components.coref.dto import CorefInput, CorefOutput
 
@@ -112,6 +113,7 @@ class CorefInstance:
 
 class Tensorizer:
     def __init__(self, config):
+        self.max_training_sentences = config['max_training_sentences']
         self.max_segment_len = config['max_segment_len']
         self.add_speaker_token = config['add_speaker_token']
         self.use_speaker_indicator = config['use_speaker_indicator']
@@ -144,16 +146,25 @@ class Tensorizer:
         """
         tokenizer = self.tokenizer
 
-        def create_inst(input_ids, sentence_map, subtoken_map, speaker_ids, genre):
-            """ Input: without considering CLS, SEP """
+        def create_inst(segments, sentence_map, subtoken_map, segment_speaker_ids, genre):
+            input_ids, input_mask, speaker_ids = [], [], []
+            for sent_tokens, sent_speaker_ids in zip(segments, segment_speaker_ids):
+                sent_input_ids = self.tokenizer.convert_tokens_to_ids(sent_tokens)
+                sent_input_mask = [1] * len(sent_input_ids)
+                while len(sent_input_ids) < self.max_segment_len:
+                    sent_input_ids.append(0)
+                    sent_input_mask.append(0)
+                    sent_speaker_ids.append(0)
+                input_ids.append(sent_input_ids)
+                input_mask.append(sent_input_mask)
+                speaker_ids.append(sent_speaker_ids)
+
             inst = CorefInstance(
-                input_ids=torch.tensor([tokenizer.cls_token_id] + input_ids + [tokenizer.sep_token_id],
-                                       dtype=torch.long),
-                input_mask=torch.tensor([1] * (len(input_ids) + 2), dtype=torch.long),
-                sentence_map=torch.tensor([sentence_map[0]] + sentence_map + [sentence_map[-1] + 1], dtype=torch.long),
-                subtoken_map=([subtoken_map[0]] + subtoken_map + [subtoken_map[-1]]),
-                speaker_ids=torch.tensor(([speaker_ids[0]] + speaker_ids + [speaker_ids[-1]]) if speaker_ids else [],
-                                         dtype=torch.long),
+                input_ids=torch.tensor(input_ids, dtype=torch.long),
+                input_mask=torch.tensor(input_mask, dtype=torch.long),
+                sentence_map=torch.tensor(sentence_map, dtype=torch.long),
+                subtoken_map=subtoken_map,
+                speaker_ids=torch.tensor(speaker_ids if self.use_speaker_indicator else [], dtype=torch.long),
                 uttr_start_idx=[1], genre_id=torch.tensor(self.genre_dict[genre], dtype=torch.long), mentions=[]
             )
             return inst
@@ -167,35 +178,79 @@ class Tensorizer:
         # Assign default genre if needed
         if genre is None or genre not in self.genres:
             genre = self.get_default_genre()
-        # Assign global sentence and token idx offset
-        sentence_idx, token_idx = 0, 0
+        # Assign global token idx offset
+        token_idx = 0
 
         # Process current doc or utterance
-        subtokens, sentence_map, subtoken_map, speaker_ids = [], [], [], []
+        subtokens, subtoken_map, speaker_ids = [], [], []
+        token_end, sentence_end = [], []
         for sent, speaker_id in zip(doc_or_uttr, sent_speaker_ids):
             if self.add_speaker_token:
                 subtokens.append(self.get_speaker_token(speaker_id))
-                sentence_map.append(sentence_idx)
                 subtoken_map.append(token_idx)
                 speaker_ids.append(speaker_id)
+                token_end.append(True)
+                sentence_end.append(False)
             for token in sent:
                 subtoks = tokenizer.tokenize(token)
                 subtokens += subtoks
-                sentence_map += [sentence_idx] * len(subtoks)
                 subtoken_map += [token_idx] * len(subtoks)
                 speaker_ids += [speaker_id] * len(subtoks)
+                token_end += [False] * (len(subtoks) - 1) + [True]
+                sentence_end += [False] * len(subtoks)
                 token_idx += 1
-            sentence_idx += 1
-        # Truncate
-        if len(subtokens) + 2 > self.max_segment_len:
-            subtokens = subtokens[:self.max_segment_len - 2]
-            sentence_map = sentence_map[:self.max_segment_len - 2]
-            subtoken_map = subtoken_map[:self.max_segment_len - 2]
+            sentence_end[-1] = True
+
+        # Split into segments
+        def split_into_segments(max_seg_len, sentence_end, token_end):
+            constraints1, constraints2 = sentence_end, token_end
+            segments, segment_subtoken_map, segment_speaker_ids = [], [], []
+            curr_idx = 0  # Index for subtokens
+            while curr_idx < len(subtokens):
+                # if len(segments) >= 9:  # For small GPU memory
+                #     sentence_end = sentence_end[:curr_idx]
+                #     break
+                end_idx = min(curr_idx + max_seg_len - 1 - 2, len(subtokens) - 1)  # Inclusive
+                while end_idx >= curr_idx and not constraints1[end_idx]:
+                    end_idx -= 1
+                if end_idx < curr_idx:
+                    logger.info(f'No sentence end found; split at token end')
+                    end_idx = min(curr_idx + max_seg_len - 1 - 2, len(subtokens) - 1)
+                    while end_idx >= curr_idx and not constraints2[end_idx]:
+                        end_idx -= 1
+                    if end_idx < curr_idx:
+                        logger.error('Cannot split valid segment: no sentence end or token end')
+
+                segment = [tokenizer.cls_token] + subtokens[curr_idx: end_idx + 1] + [tokenizer.sep_token]
+                segments.append(segment)
+
+                segment_subtoken_map.append([subtoken_map[curr_idx]] + subtoken_map[curr_idx: end_idx + 1] + [subtoken_map[end_idx]])
+                segment_speaker_ids.append([speaker_ids[curr_idx]] + speaker_ids[curr_idx: end_idx + 1] + [speaker_ids[end_idx]])
+
+                curr_idx = end_idx + 1
+
+            assert len(sentence_end) == sum([len(seg) - 2 for seg in segments])  # of subtokens in all segments
+            sent_map = []
+            sent_idx, subtok_idx = 0, 0
+            for segment in segments:
+                sent_map.append(sent_idx)  # [CLS]
+                for i in range(len(segment) - 2):
+                    sent_map.append(sent_idx)
+                    sent_idx += int(sentence_end[subtok_idx])
+                    subtok_idx += 1
+                sent_map.append(sent_idx)  # [SEP]
+
+            return segments, sent_map, util.flatten(segment_subtoken_map), segment_speaker_ids
+
+        segments, sent_map, subtoken_map, segment_speaker_ids = split_into_segments(self.max_segment_len, sentence_end, token_end)
+        num_all_seg_tokens = len(util.flatten(segments))
+        assert num_all_seg_tokens == len(sent_map)
+        assert num_all_seg_tokens == len(subtoken_map)
 
         inst = create_inst(
-            input_ids=tokenizer.convert_tokens_to_ids(subtokens),
-            sentence_map=sentence_map, subtoken_map=subtoken_map,
-            speaker_ids=speaker_ids if self.use_speaker_indicator else [], genre=genre
+            segments=segments,
+            sentence_map=sent_map, subtoken_map=subtoken_map,
+            segment_speaker_ids=segment_speaker_ids, genre=genre
         )
         return inst
 
