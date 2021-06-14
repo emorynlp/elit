@@ -6,7 +6,6 @@ from urllib.request import Request, urlopen
 
 
 class Client(object):
-
     coref_context_keys = ('input_ids', 'sentence_map', 'subtoken_map', 'mentions', 'uttr_start_idx', 'speaker_ids')
 
     def __init__(self, url: str, auth: str = None) -> None:
@@ -48,6 +47,7 @@ class Client(object):
 
     def _send_post(self, url, form: Dict[str, Any]):
         request = Request(url, json.dumps(form).encode())
+        request.add_header('Content-Type', 'application/json')
         return urlopen(request).read().decode()
 
     def _send_post_json(self, url, form: Dict[str, Any]):
