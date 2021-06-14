@@ -59,7 +59,7 @@ setup(
         'toposort==1.5',
         'unofficial_stog>=0.0.20',
         'uvicorn',
-        'fastapi',
+        'fastapi==0.65.2',
         'transformers',
         'scipy'
     ],
