@@ -50,18 +50,19 @@ setup(
     packages=find_packages(exclude=['docs', 'tests*']),
     include_package_data=True,
     install_requires=[
+        'torch>=1.6.0',
         'sentencepiece==0.1.91',
-        'termcolor',
-        'phrasetree',
-        'pynvml',
-        'alnlp',
+        'termcolor==1.1.0',
+        'phrasetree==0.0.4',
+        'pynvml==8.0.4',
+        'alnlp==1.0.0rc27',
         'penman==0.6.2',
         'toposort==1.5',
         'unofficial_stog>=0.0.20',
-        'uvicorn',
+        'uvicorn==0.13.1',
         'fastapi==0.65.2',
-        'transformers',
-        'scipy'
+        'transformers==4.6.1',
+        'scipy==1.5.4'
     ],
     python_requires='>=3.6',
     entry_points={
