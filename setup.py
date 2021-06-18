@@ -65,7 +65,7 @@ setup(
         'editdistance==0.5.3',
         'scipy==1.5.4'
     ],
-    python_requires='>=3.6',
+    python_requires='>=3.7',
     entry_points={
         'console_scripts': [
             'elit=elit.main:main',
