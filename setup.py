@@ -51,7 +51,7 @@ setup(
     include_package_data=True,
     install_requires=[
         'torch>=1.6.0',
-        'sentencepiece==0.1.91',
+        'sentencepiece==0.1.95',
         'termcolor==1.1.0',
         'phrasetree==0.0.4',
         'pynvml==8.0.4',
