@@ -62,6 +62,7 @@ setup(
         'uvicorn==0.13.1',
         'fastapi==0.65.2',
         'transformers==4.6.1',
+        'editdistance==0.5.3',
         'scipy==1.5.4'
     ],
     python_requires='>=3.6',
