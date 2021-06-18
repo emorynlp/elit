@@ -50,7 +50,7 @@ setup(
     packages=find_packages(exclude=['docs', 'tests*']),
     include_package_data=True,
     install_requires=[
-        'torch>=1.6.0',
+        'torch>=1.6.0,<1.9.0',
         'sentencepiece==0.1.95',
         'termcolor==1.1.0',
         'phrasetree==0.0.4',
