@@ -24,6 +24,7 @@ from torch.optim import Adam
 from torch.optim.lr_scheduler import ExponentialLR
 from torch.utils.data import DataLoader
 
+from elit.common.constant import EOS
 from elit.common.dataset import SamplerBuilder, PadSequenceDataLoader
 from elit.common.transform import VocabDict, TransformList
 from elit.components.mtl.tasks import Task
@@ -110,8 +111,9 @@ class BiaffineDependencyParsing(Task, BiaffineDependencyParser):
         if max_seq_len and isinstance(data, str):
             dataset.prune(lambda x: len(x['token_input_ids']) > 510, logger)
         return PadSequenceDataLoader(
-            batch_sampler=self.sampler_builder.build(self.compute_lens(data, dataset, length_field='FORM'),
-                                                     shuffle=training, gradient_accumulation=gradient_accumulation),
+            batch_sampler=self.sampler_builder.build(
+                self.compute_lens(data, dataset, length_field='FORM'),
+                shuffle=training, gradient_accumulation=gradient_accumulation),
             device=device,
             dataset=dataset,
             pad=self.get_pad_dict())
@@ -148,3 +150,6 @@ class BiaffineDependencyParsing(Task, BiaffineDependencyParser):
             result = list(zip(arcs_per_sent[:sent_len], [vocab[r] for r in rels_per_sent[:sent_len]]))
             result = [(x[0] - 1, x[1]) for x in result]
             yield result
+
+    def build_samples(self, inputs, cls_is_bos=False, sep_is_eos=False):
+        return [{'FORM': token + ([EOS] if sep_is_eos else [])} for token in inputs]
