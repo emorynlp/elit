@@ -3,7 +3,7 @@
 The Emory Language and Information Toolkit (ELIT) provides the state-of-the-art NLP models for the following tasks:
 
 * [Tokenization](docs/tokenization.md)
-* Part-of-Speech Tagging
+* [Part-of-Speech Tagging](docs/part_of_speech_tagging.md)
 * Named Entity Recognition
 * Constituency Parsing
 * Dependency Parsing
