@@ -19,7 +19,7 @@
 from elit.common.constant import ELIT_URL
 
 LEM_POS_NER_DEP_SDP_CON_AMR_ELECTRA_BASE_EN = ELIT_URL + 'en_pos_ner_srl_dep_con_amr_electra_base_20201222.zip'
-LEM_POS_NER_DEP_SDP_CON_AMR_ROBERTA_BASE_EN = ELIT_URL + 'en_pos_ner_srl_dep_con_amr_roberta_base_20210402_152521.zip'
+LEM_POS_NER_DEP_SDP_CON_AMR_ROBERTA_BASE_EN = ELIT_URL + 'en_pos_ner_srl_dep_con_amr_roberta_base_20210628_234225.zip'
 LEM_POS_NER_DEP_ROBERTA_BASE_EN = ELIT_URL + 'en_lem_pos_ner_ddr_roberta_base_20210325_121606.zip'
 
 ALL = {}
