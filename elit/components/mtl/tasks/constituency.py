@@ -158,5 +158,5 @@ class CRFConstituencyParsing(Task, CRFConstituencyParser):
                         subtree.set_label(pos_per_sent[offset])
                     offset += 1
 
-    def build_samples(self, inputs):
+    def build_samples(self, inputs, cls_is_bos=False, sep_is_eos=False):
         return CRFConstituencyParser.build_samples(self, inputs)
