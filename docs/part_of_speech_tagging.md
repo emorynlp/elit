@@ -1,5 +1,7 @@
 # Part-of-Speech Tagging
 
+Part-of-speech (POS) tagging is the task of tagging each word in a sentence with its part-of-speech, which is a grammatical category including noun, verb, adjective etc.
+
 ## API
 
 The part-of-speech (POS) tagger is built into the Multi-Task Learning framework of ELIT. To use the POS tagger, a MTL component is required. One can list the pre-trained MTL components via the following code snippets.

@@ -1,6 +1,6 @@
 # Tokenization
 
-ELIT features with a rule-based English tokenizer which offers both tokenization and sentence segmentation.
+Tokenization is the task to split a sentence into tokens such that each token represents a word or a punctuation. ELIT features a rule-based English tokenizer which offers both tokenization and sentence segmentation.
 
 ### Tokenization
 

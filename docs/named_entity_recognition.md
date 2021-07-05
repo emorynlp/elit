@@ -1,6 +1,6 @@
 # Named Entity Recognition
 
-Named Entity Recognition (NER) is also a built-in decoder of the MTL framework. Users can load a MTL component and specify `tasks='ner'` to have the NER annotated by ELIT. E.g.,
+Named Entity Recognition (NER) is the task of recognizing the span and type of each entity in a sentence. It is also a built-in decoder of the MTL framework. Users can load a MTL component and specify `tasks='ner'` to have the NER annotated by ELIT. E.g.,
 
 ```python
 import elit
@@ -16,9 +16,9 @@ Outputs:
 ```python
 {
   "ner": [
-    [["Emory NLP", "ORG", 0, 2], ["Atlanta", "GPE", 7, 8], ["GA", "GPE", 9, 10]],
-    [["Jinho D. Choi", "PERSON", 4, 7], ["2014", "DATE", 8, 9]],
-    [["Choi", "PERSON", 1, 2], ["Emory University", "ORG", 6, 8]]
+    [["ORG", 0, 2, "Emory NLP"], ["GPE", 7, 8, "Atlanta"], ["GPE", 9, 10, "GA"]],
+    [["PERSON", 4, 7, "Jinho D. Choi"], ["DATE", 8, 9, "2014"]],
+    [["PERSON", 1, 2, "Choi"], ["ORG", 6, 8, "Emory University"]]
   ],
   "tok": [
     ["Emory", "NLP", "is", "a", "research", "lab", "in", "Atlanta", ",", "GA", "."],
@@ -28,4 +28,5 @@ Outputs:
 }
 ```
 
-In `ner` field, each entity is represented 
+In `ner` field, each entity is represented as a tupe of `(type, start, end, form)`.
+
