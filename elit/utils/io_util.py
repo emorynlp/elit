@@ -249,9 +249,6 @@ def download(url, save_path=None, save_dir=elit_home(), prefix=ELIT_URL, append_
                 hints_for_download = f'e.g. \nwget {url} -O {save_path}\n'
             else:
                 hints_for_download = ' Use some decent downloading tools.\n'
-            if not url.startswith(ELIT_URL):
-                hints_for_download += 'For third party data, you may find it on our mirror site:\n' \
-                                      'https://od.hankcs.com/elit/data/\n'
             installed_version, latest_version = check_outdated()
             if installed_version != latest_version:
                 hints_for_download += f'Or upgrade to the latest version({latest_version}):\npip install -U elit'
