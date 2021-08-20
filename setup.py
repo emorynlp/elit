@@ -58,7 +58,7 @@ setup(
         'alnlp==1.0.0rc27',
         'penman==0.6.2',
         'toposort==1.5',
-        'unofficial_stog>=0.0.20',
+        'unofficial_stog==0.0.20',
         'uvicorn==0.13.1',
         'fastapi==0.65.2',
         'transformers==4.6.1',
