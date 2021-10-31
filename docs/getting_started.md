@@ -3,14 +3,10 @@
 ## Install
 
 ```
-conda install pytorch cudatoolkit=10.2 -c pytorch      # [Optional] GPU support, adjust the cuda version 
-git clone https://github.com/emorynlp/elit.git
-cd elit
-pip install -e .
+pip install elit --pre
 ```
 
-`conda` will install a relatively new version of Python which meets ELIT's requirement. If you are not using conda, 
-make sure Python >= 3.7.
+ELIT requires Python >= 3.7. `pip` installs PyTorch CPU by default. Feel free to install [a GPU-enabled PyTorch](https://pytorch.org/get-started/locally/) (`torch>=1.6.0`).
 
 ## CLI
 

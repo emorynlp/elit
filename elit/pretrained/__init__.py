@@ -18,6 +18,7 @@
 # Author: hankcs
 from elit.pretrained import mtl
 from elit.pretrained import coref
+from elit.pretrained import amr
 
 # Will be filled up during runtime
 ALL = {}

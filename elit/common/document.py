@@ -19,10 +19,7 @@
 import json
 from typing import List
 
-import penman
 from phrasetree.tree import Tree
-from stog.data.dataset_readers.amr_parsing.amr import AMRGraph
-
 from elit.common.structure import SerializableDict
 from elit.utils.util import collapse_json
 
@@ -79,6 +76,8 @@ class Document(dict):
                     ls = ls[0]
                 self[k] = ls
             elif k == 'amr':
+                from stog.utils import penman
+                from stog.data.dataset_readers.amr_parsing.amr import AMRGraph
                 if isinstance(v, AMRGraph) or isinstance(v[0], AMRGraph):
                     continue
                 flat = isinstance(v[0][0], str)
@@ -114,6 +113,7 @@ class Document(dict):
                     ls = ls[0]
                 d[k] = ls
             elif k == 'amr':
+                from stog.data.dataset_readers.amr_parsing.amr import AMRGraph
                 flat = isinstance(v, AMRGraph)
                 if flat:
                     v: List[AMRGraph] = [v]

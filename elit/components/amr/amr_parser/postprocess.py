@@ -22,7 +22,7 @@
 
 from collections import defaultdict
 
-import penman
+from stog.utils import penman
 import re
 import numpy as np
 
