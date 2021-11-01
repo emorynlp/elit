@@ -497,7 +497,7 @@ class Seq2seq_AMR_Parser(TorchComponent):
 
     def evaluate(self, tst_data, save_dir=None, logger: logging.Logger = None, batch_size=None, output=True,
                  cache=None, ret_speed=False, **kwargs):
-        return super().evaluate(tst_data, save_dir, logger, batch_size, output, cache, ret_speed, **kwargs)
+        return super().evaluate(tst_data, save_dir, logger, batch_size, output, **kwargs)
 
     def build_vocabs(self, trn: torch.utils.data.Dataset, logger: logging.Logger):
         additional_tokens = set()
