@@ -98,7 +98,7 @@ def load_from_meta_file(save_dir: str, meta_filename='meta.json', transform_only
         if model_version > installed_version:
             eprint(f'{identifier} was created with elit-{model_version}, '
                    f'while you are running a lower version: {installed_version}. ')
-        if installed_version != latest_version:
+        if installed_version < latest_version:
             eprint(
                 f'Please upgrade elit with:\n'
                 f'pip install --upgrade elit\n')
