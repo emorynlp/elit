@@ -19,6 +19,7 @@
 from elit.pretrained import mtl
 from elit.pretrained import coref
 from elit.pretrained import amr
+from elit.pretrained import dep
 
 # Will be filled up during runtime
 ALL = {}
