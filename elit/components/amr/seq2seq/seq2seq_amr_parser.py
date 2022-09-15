@@ -254,8 +254,8 @@ class Seq2seq_AMR_Parser(TorchComponent):
 
         return smatch
 
-    def predict_amrs(self, batch, beam_size=1):
-        out = self._model_generate(batch, beam_size)
+    def predict_amrs(self, batch, beam_size=1, no_repeat_ngram_size=None):
+        out = self._model_generate(batch, beam_size, no_repeat_ngram_size=no_repeat_ngram_size)
         tokens = []
         for i1 in range(0, out.size(0), beam_size):
             tokens_same_source = []
@@ -282,7 +282,7 @@ class Seq2seq_AMR_Parser(TorchComponent):
 
         return graphs
 
-    def _model_generate(self, batch, beam_size):
+    def _model_generate(self, batch, beam_size, no_repeat_ngram_size=None):
         input_ids = batch['text_token_ids']
         attention_mask = input_ids.ne(self.model.config.pad_token_id).to(torch.long)
         out = self.model.generate(
@@ -291,6 +291,7 @@ class Seq2seq_AMR_Parser(TorchComponent):
             max_length=1024,
             decoder_start_token_id=0,
             num_beams=beam_size,
+            no_repeat_ngram_size=no_repeat_ngram_size,
             num_return_sequences=beam_size)
         return out
 
@@ -374,7 +375,8 @@ class Seq2seq_AMR_Parser(TorchComponent):
     def input_is_flat(self, data):
         return isinstance(data, str)
 
-    def predict(self, data: Union[str, List[str]], beautiful_amr_graph=True, **kwargs):
+    def predict(self, data: Union[str, List[str]], beautiful_amr_graph=True, beam_size=1, no_repeat_ngram_size=None,
+                **kwargs):
         flat = self.input_is_flat(data)
         if flat:
             data = [data]
@@ -382,7 +384,7 @@ class Seq2seq_AMR_Parser(TorchComponent):
         orders = []
         results = []
         for batch in dataloader:
-            graphs = self.predict_amrs(batch)
+            graphs = self.predict_amrs(batch, beam_size=beam_size, no_repeat_ngram_size=no_repeat_ngram_size)
             graphs = [x[0] for x in graphs]
             if beautiful_amr_graph:
                 graphs = [AMRGraph(x.triples, x.top, x.epidata, x.metadata) for x in graphs]
