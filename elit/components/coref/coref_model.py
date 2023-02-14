@@ -20,7 +20,10 @@ import torch
 import torch.nn as nn
 from transformers import BertModel
 import logging
-from collections import Iterable
+try:
+    from collections import Iterable
+except ImportError:
+    from collections.abc import Iterable
 import torch.nn.init as init
 
 import elit.components.coref.higher_order as ho
