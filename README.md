@@ -22,3 +22,6 @@ This is an open-source project led by the [Emory NLP](http://nlp.cs.emory.edu/) 
 * [Getting Started](docs/getting_started.md)
 * [Data Format](docs/data_format.md)
 
+## Citation
+
+* [ELIT: Emory Language and Information Toolkit](https://arxiv.org/abs/2109.03903), Han He, Liyan Xu, and Jinho D. Choi, arXiv, 2109.03903, cs.CL, 2021.
